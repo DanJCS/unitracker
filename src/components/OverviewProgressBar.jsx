@@ -1,21 +1,18 @@
-import React from 'react';
+// src/components/OverviewProgressBar.jsx
+
+import React, { useMemo } from 'react'; // <--- FIX: Added useMemo
 import styled from 'styled-components';
 import { differenceInDays, format } from 'date-fns';
 import { FaCheck, FaHourglassHalf } from 'react-icons/fa';
 
-const Container = styled.div`
-    margin-top: 3rem;
-    padding: 0 1rem;
-`;
-
+const Container = styled.div` margin-top: 3rem; padding: 0 1rem; `;
 const BarContainer = styled.div`
     position: relative; width: 100%; height: 20px;
     background: ${({ theme }) => theme.cardBg}; border-radius: 10px;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-top: 2rem; // Add margin to give labels space
+    margin-top: 2rem;
     margin-bottom: 2rem;
 `;
-
 const ProgressFill = styled.div`
     height: 100%;
     width: ${({ progress }) => progress}%;
@@ -23,11 +20,18 @@ const ProgressFill = styled.div`
     border-radius: 10px;
     transition: width 0.5s ease;
 `;
+const DatesContainer = styled.div`
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: ${({ theme }) => theme.text};
+    opacity: 0.8;
+`;
 
 const MilestoneWrapper = styled.div`
     position: absolute;
     left: ${({ position }) => position}%;
-    // Use top/bottom based on vertical offset
     top: ${({ vOffset }) => vOffset === 'up' ? '50%' : 'auto'};
     bottom: ${({ vOffset }) => vOffset === 'down' ? '50%' : 'auto'};
     transform: translate(-50%, ${({ vOffset }) => vOffset === 'up' ? '-100%' : '100%'});
@@ -42,19 +46,27 @@ const MilestoneLabel = styled.span`
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     border: 1px solid ${({ theme }) => theme.borderColor};
     
-    // Creates the speech bubble pointer
     &::after {
         content: ''; position: absolute; left: 50%;
         transform: translateX(-50%);
         width: 0; height: 0;
         border-left: 6px solid transparent;
         border-right: 6px solid transparent;
-        border-top: 6px solid ${({ theme }) => theme.borderColor};
-        // Position pointer at top or bottom
         top: ${({ vOffset }) => vOffset === 'up' ? '100%' : 'auto'};
         bottom: ${({ vOffset }) => vOffset === 'down' ? '100%' : 'auto'};
-        border-bottom: ${({ vOffset }) => vOffset === 'up' ? 'none' : `6px solid ${theme.borderColor}`};
-        border-top: ${({ vOffset }) => vOffset === 'down' ? 'none' : `6px solid ${theme.borderColor}`};
+        border-bottom: ${({ vOffset, theme }) => vOffset === 'up' ? 'none' : `6px solid ${theme.cardBg}`};
+        border-top: ${({ vOffset, theme }) => vOffset === 'down' ? 'none' : `6px solid ${theme.cardBg}`};
+    }
+    &::before {
+        content: ''; position: absolute; left: 50%;
+        transform: translateX(-50%);
+        width: 0; height: 0;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        top: ${({ vOffset }) => vOffset === 'up' ? '100%' : '-7px'};
+        bottom: ${({ vOffset }) => vOffset === 'down' ? '100%' : 'auto'};
+        border-bottom: ${({ vOffset, theme }) => vOffset === 'up' ? 'none' : `7px solid ${theme.borderColor}`};
+        border-top: ${({ vOffset, theme }) => vOffset === 'down' ? 'none' : `7px solid ${theme.borderColor}`};
     }
 `;
 
@@ -67,15 +79,6 @@ const MilestoneMarker = styled.div`
     color: white; font-size: 0.7rem; z-index: 20;
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-`;
-
-const DatesContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1rem;
-  font-size: 0.9rem;
-  color: ${({ theme }) => theme.text};
-  opacity: 0.8;
 `;
 
 const OverviewProgressBar = ({ startDate, endDate, milestones }) => {
@@ -92,10 +95,9 @@ const OverviewProgressBar = ({ startDate, endDate, milestones }) => {
         let lastPos = -10;
         return sorted.map((m, index) => {
             let vOffset = 'up';
-            if (m.position < lastPos + 8) { // 8% threshold for overlap
+            if (index > 0 && m.position < sorted[index-1].position + 8) { // 8% threshold for overlap
                 vOffset = sorted[index - 1].vOffset === 'up' ? 'down' : 'up';
             }
-            lastPos = m.position;
             return { ...m, vOffset };
         });
     }, [milestones, startDate, totalDays]);
@@ -118,7 +120,6 @@ const OverviewProgressBar = ({ startDate, endDate, milestones }) => {
                         <MilestoneLabel vOffset={m.vOffset}>{m.name}</MilestoneLabel>
                     </MilestoneWrapper>
                 ))}
-                {/* Markers are rendered separately to sit on the bar */}
                 {positionedMilestones.map(m => (
                     <MilestoneMarker
                         key={`${m.id}-marker`}

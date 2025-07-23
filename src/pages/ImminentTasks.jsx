@@ -7,8 +7,10 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { differenceInDays } from 'date-fns';
 import styled from 'styled-components';
-import { FaTrash, FaPencilAlt } from 'react-icons/fa'; // Added FaPencilAlt
-import EditModal from '../components/common/EditModal'; // Added EditModal import
+import { FaTrash, FaPencilAlt, FaCheckCircle } from 'react-icons/fa'; // <--- FIX: Added FaCheckCircle
+import EditModal from '../components/common/EditModal';
+import CompletedTasksModal from '../components/common/CompletedTasksModal'; // <--- FIX: Added import
+import { formatTimeSpent } from '../utils/timeFormatter'; // <--- FIX: Added import
 
 const TasksContainer = styled.div`
     width: 100%;
@@ -17,7 +19,6 @@ const TasksContainer = styled.div`
     align-items: center;
     gap: 2rem;
 `;
-
 const Title = styled.h1`
     font-size: 2.5rem;
     font-weight: 700;
@@ -25,7 +26,6 @@ const Title = styled.h1`
     color: ${({ theme }) => theme.text};
     text-align: center;
 `;
-
 const FormContainer = styled.form`
     background: ${({ theme }) => theme.cardBg};
     padding: 2rem;
@@ -37,13 +37,11 @@ const FormContainer = styled.form`
     flex-direction: column;
     gap: 1rem;
 `;
-
 const FormTitle = styled.h2`
     margin: 0 0 1rem 0;
     text-align: center;
     color: ${({ theme }) => theme.text};
 `;
-
 const Input = styled.input`
     padding: 0.75rem;
     border: 1px solid ${({ theme }) => theme.borderColor};
@@ -51,13 +49,11 @@ const Input = styled.input`
     background: ${({ theme }) => theme.body};
     color: ${({ theme }) => theme.text};
     font-size: 1rem;
-
     &:focus {
         outline: none;
         border-color: ${({ theme }) => theme.accent};
     }
 `;
-
 const TextArea = styled.textarea`
     padding: 0.75rem;
     border: 1px solid ${({ theme }) => theme.borderColor};
@@ -67,13 +63,11 @@ const TextArea = styled.textarea`
     font-size: 1rem;
     min-height: 100px;
     resize: vertical;
-
     &:focus {
         outline: none;
         border-color: ${({ theme }) => theme.accent};
     }
 `;
-
 const SubmitButton = styled.button`
     padding: 0.75rem;
     border: none;
@@ -84,12 +78,10 @@ const SubmitButton = styled.button`
     font-size: 1rem;
     cursor: pointer;
     transition: opacity 0.2s ease;
-
     &:hover {
         opacity: 0.9;
     }
 `;
-
 const TasksList = styled.div`
     width: 100%;
     max-width: 600px;
@@ -97,8 +89,16 @@ const TasksList = styled.div`
     flex-direction: column;
     gap: 1rem;
 `;
-
-const getGlow = (daysLeft, theme) => {
+const DatePickerWrapper = styled.div`
+    .react-datepicker-wrapper { width: 100%; }
+    .react-datepicker__input-container input {
+        width: 100%; padding: 0.75rem;
+        border: 1px solid ${({ theme }) => theme.borderColor};
+        border-radius: 8px; background: ${({ theme }) => theme.body};
+        color: ${({ theme }) => theme.text}; font-size: 1rem;
+    }
+`;
+const getGlow = (daysLeft) => {
     const baseShadow = `0 4px 12px rgba(0,0,0,0.1)`;
     if (daysLeft < 0) return baseShadow;
     let glowColor;
@@ -108,79 +108,41 @@ const getGlow = (daysLeft, theme) => {
     else return baseShadow;
     return `0 0 12px 2px ${glowColor}60, ${baseShadow}`;
 };
-
 const TaskCard = styled.div`
-    position: relative;
-    background: ${({ theme }) => theme.cardBg};
-    border: 1px solid ${({ theme }) => theme.borderColor};
-    padding: 1.5rem;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    position: relative; background: ${({ theme }) => theme.cardBg};
+    border: 1px solid ${({ theme }) => theme.borderColor}; padding: 1.5rem;
+    border-radius: 12px; cursor: pointer; transition: all 0.2s ease;
     text-align: center;
-    box-shadow: ${({ daysLeft, theme }) => getGlow(daysLeft, theme)};
+    box-shadow: ${({ daysLeft }) => getGlow(daysLeft)};
     &:hover {
         transform: translateY(-2px);
-        box-shadow: ${({ daysLeft, theme }) => getGlow(daysLeft, theme).replace('0.1', '0.2')};
+        box-shadow: ${({ daysLeft }) => getGlow(daysLeft).replace('0.1', '0.2')};
     }
 `;
-
 const CardActions = styled.div`
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    display: flex;
-    gap: 0.25rem;
+    position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;
 `;
-
 const ActionButton = styled.button`
     background: none; border: none; color: ${({ theme }) => theme.text}60;
     cursor: pointer; font-size: 0.9rem; padding: 0.5rem; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
     &:hover {
         background: ${({ hoverBg }) => hoverBg || '#ef44441a'};
         color: ${({ hoverColor }) => hoverColor || '#ef4444'};
     }
 `;
-
 const BottomRightButton = styled(ActionButton)`
     position: absolute; bottom: 0.5rem; right: 0.5rem; top: unset;
 `;
-
 const ViewCompletedButton = styled(SubmitButton)`
     background: transparent;
     color: ${({ theme }) => theme.accent};
     border: 1px solid ${({ theme }) => theme.accent};
     margin-top: 1rem;
 `;
-
-const TaskName = styled.h3`
-    margin: 0 0 0.5rem 0;
-    color: ${({ theme }) => theme.text};
-`;
-
-const TaskDue = styled.p`
-    margin: 0;
-    color: ${({ theme }) => theme.text}99;
-    font-weight: 500;
-`;
-
-const DatePickerWrapper = styled.div`
-    .react-datepicker-wrapper {
-        width: 100%;
-    }
-
-    .react-datepicker__input-container input {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid ${({ theme }) => theme.borderColor};
-        border-radius: 8px;
-        background: ${({ theme }) => theme.body};
-        color: ${({ theme }) => theme.text};
-        font-size: 1rem;
-    }
-`;
+const TaskName = styled.h3` margin: 0 0 0.25rem 0; color: ${({ theme }) => theme.text}; `;
+const TaskDue = styled.p` margin: 0; color: ${({ theme }) => theme.text}99; font-weight: 500; font-size: 0.9rem; `;
+const TimeSpentDisplay = styled(TaskDue)` font-style: italic; margin-top: 0.5rem; `; // <--- FIX: Added definition
 
 const ImminentTasks = () => {
     const { tasks, addTask, removeTask, updateTask, toggleTaskCompletion } = useAppContext();
@@ -206,6 +168,10 @@ const ImminentTasks = () => {
     const handleSaveTask = (updatedData) => { if (editingTask) { updateTask(editingTask.id, updatedData); } };
     const handleToggleComplete = (e, taskId) => { e.stopPropagation(); toggleTaskCompletion(taskId); };
 
+    // FIX: Restored auto-bullet functionality
+    const handleApproachChange = (e) => { let value = e.target.value; if (value === '') { setApproach(''); return; } if (!value.startsWith('• ')) { value = '• ' + value.trimStart(); } setApproach(value); };
+    const handleApproachKeyDown = (e) => { if (e.key === 'Enter') { e.preventDefault(); const { value, selectionStart } = e.target; const newValue = value.substring(0, selectionStart) + '\n• ' + value.substring(selectionStart); setApproach(newValue); requestAnimationFrame(() => { if (approachRef.current) { const newCursorPosition = selectionStart + 3; approachRef.current.selectionStart = newCursorPosition; approachRef.current.selectionEnd = newCursorPosition; } }); } };
+
     return (
         <TasksContainer>
             <Title>Imminent Tasks</Title>
@@ -215,7 +181,7 @@ const ImminentTasks = () => {
                 <DatePickerWrapper>
                     <DatePicker selected={dueDate} onChange={date => setDueDate(date)} dateFormat="MMMM d, yyyy" />
                 </DatePickerWrapper>
-                <TextArea ref={approachRef} value={approach} onChange={e => setApproach(e.target.value)} placeholder="Method of approach (bullet points)" />
+                <TextArea ref={approachRef} value={approach} onChange={handleApproachChange} onKeyDown={handleApproachKeyDown} placeholder="Method of approach (bullet points)" />
                 <SubmitButton type="submit">Add Task</SubmitButton>
             </FormContainer>
             <ViewCompletedButton onClick={() => setCompletedModalOpen(true)}>
