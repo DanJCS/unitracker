@@ -71,20 +71,18 @@ const ProgressContainer = styled.div`
 `;
 
 const Overview = () => {
-    const { milestones } = useAppContext();
-    const semesterStart = new Date('2025-07-21');
-    const semesterEnd = new Date('2025-10-27');
+    // Get everything from context now
+    const { milestones, semesterStart, semesterEnd } = useAppContext();
     const today = new Date();
 
     const totalDays = differenceInDays(semesterEnd, semesterStart);
     const elapsedDays = differenceInDays(today, semesterStart);
     const daysLeft = Math.max(0, differenceInDays(semesterEnd, today));
-    const percentComplete = Math.max(0, Math.min(100, (elapsedDays / totalDays) * 100));
+    const percentComplete = totalDays > 0 ? Math.max(0, Math.min(100, (elapsedDays / totalDays) * 100)) : 0;
 
     return (
         <OverviewContainer>
             <Title>Semester Overview</Title>
-
             <StatsContainer>
                 <StatBox>
                     <StatValue>{Math.round(percentComplete)}%</StatValue>
@@ -95,7 +93,6 @@ const Overview = () => {
                     <StatLabel>Days Remaining</StatLabel>
                 </StatBox>
             </StatsContainer>
-
             <ProgressContainer>
                 <OverviewProgressBar
                     startDate={semesterStart}

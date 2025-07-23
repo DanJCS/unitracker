@@ -1,20 +1,29 @@
-import React, { createContext, useState, useContext } from 'react';
-import { v4 as uuidv4 } from 'uuid'; // Run `npm install uuid` for unique IDs
+// src/context/AppContext.jsx
+
+import React, { createContext, useContext } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import usePersistentState from '../hooks/usePersistentState';
+import { subDays, addDays } from 'date-fns';
 
 const AppContext = createContext();
 
+// Sensible defaults for a new user
+const defaultStartDate = subDays(new Date(), 30).toISOString();
+const defaultEndDate = addDays(new Date(), 60).toISOString();
+
 export const AppProvider = ({ children }) => {
-    const [milestones, setMilestones] = useState([
-        { id: 'm1', name: 'Project Proposal Due', date: '2025-08-15', completed: true },
-        { id: 'm2', name: 'Mid-term Exam', date: '2025-09-10', completed: false },
-    ]);
-    const [tasks, setTasks] = useState([
-        { id: 't1', name: 'Research for Essay', dueDate: '2025-07-30', approach: '• Find 5 academic sources\n• Summarize key points' },
-    ]);
-    const [theme, setTheme] = useState('light');
+    const [milestones, setMilestones] = usePersistentState('milestones', []);
+    const [tasks, setTasks] = usePersistentState('tasks', []);
+    const [theme, setTheme] = usePersistentState('theme', 'light');
+    const [semesterStart, setSemesterStart] = usePersistentState('semesterStart', defaultStartDate);
+    const [semesterEnd, setSemesterEnd] = usePersistentState('semesterEnd', defaultEndDate);
 
     const addMilestone = (milestone) => {
         setMilestones([...milestones, { ...milestone, id: uuidv4(), completed: false }]);
+    };
+
+    const removeMilestone = (id) => {
+        setMilestones(milestones.filter(m => m.id !== id));
     };
 
     const toggleMilestoneCompletion = (id) => {
@@ -25,6 +34,10 @@ export const AppProvider = ({ children }) => {
         setTasks([...tasks, { ...task, id: uuidv4() }]);
     };
 
+    const removeTask = (id) => {
+        setTasks(tasks.filter(t => t.id !== id));
+    };
+
     const getTaskById = (id) => {
         return tasks.find(t => t.id === id);
     };
@@ -33,15 +46,25 @@ export const AppProvider = ({ children }) => {
         setTheme(theme === 'light' ? 'dark' : 'light');
     };
 
+    const setSemesterDates = (start, end) => {
+        setSemesterStart(start.toISOString());
+        setSemesterEnd(end.toISOString());
+    };
+
     const value = {
         milestones,
         tasks,
         theme,
+        semesterStart: new Date(semesterStart),
+        semesterEnd: new Date(semesterEnd),
         addMilestone,
+        removeMilestone,
         toggleMilestoneCompletion,
         addTask,
+        removeTask,
         getTaskById,
         toggleTheme,
+        setSemesterDates,
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

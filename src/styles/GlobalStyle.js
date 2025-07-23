@@ -43,4 +43,14 @@ export const GlobalStyle = createGlobalStyle`
     button {
         font-family: inherit;
     }
+    
+    .date-picker-full-width {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid ${({ theme }) => theme.borderColor};
+        border-radius: 8px;
+        background: ${({ theme }) => theme.body};
+        color: ${({ theme }) => theme.text};
+        font-size: 1rem;
+    }
 `;

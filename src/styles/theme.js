@@ -1,13 +1,21 @@
+// src/styles/theme.js
+
 export const lightTheme = {
-    name: 'light', // <-- ADD THIS
+    name: 'light',
     body: '#f8fafc',
     text: '#1e293b',
-    // ... rest of the theme
+    sidebarBg: '#ffffff',
+    accent: '#6366f1',
+    cardBg: '#ffffff',
+    borderColor: '#e2e8f0',
 };
 
 export const darkTheme = {
-    name: 'dark', // <-- ADD THIS
+    name: 'dark',
     body: '#0f172a',
     text: '#f1f5f9',
-    // ... rest of the theme
+    sidebarBg: '#1e293b',
+    accent: '#818cf8',
+    cardBg: '#1e293b',
+    borderColor: '#334155',
 };

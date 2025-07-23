@@ -4,6 +4,7 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import styled from 'styled-components';
 import { format } from 'date-fns';
+import { FaTrash } from 'react-icons/fa';
 
 const MilestonesContainer = styled.div`
     width: 100%;
@@ -78,6 +79,7 @@ const MilestonesList = styled.div`
 `;
 
 const MilestoneCard = styled.div`
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -96,6 +98,7 @@ const MilestoneCard = styled.div`
 
 const MilestoneInfo = styled.div`
     flex: 1;
+    padding-right: 1rem;
 `;
 
 const MilestoneName = styled.strong`
@@ -140,8 +143,29 @@ const DatePickerWrapper = styled.div`
     }
 `;
 
+const RemoveButton = styled.button`
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: ${({ theme }) => theme.text}60;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+        color: #ef4444;
+        background: #ef44441a;
+    }
+`;
+
 const Milestones = () => {
-    const { milestones, addMilestone, toggleMilestoneCompletion } = useAppContext();
+    const { milestones, addMilestone, toggleMilestoneCompletion, removeMilestone } = useAppContext();
     const [name, setName] = useState('');
     const [date, setDate] = useState(new Date());
 
@@ -150,6 +174,13 @@ const Milestones = () => {
         if (!name.trim()) return;
         addMilestone({ name, date: date.toISOString().split('T')[0] });
         setName('');
+    };
+
+    const handleRemoveMilestone = (e, milestoneId) => {
+        e.stopPropagation();
+        if (window.confirm("Are you sure you want to delete this milestone?")) {
+            removeMilestone(milestoneId);
+        }
     };
 
     return (
@@ -180,6 +211,9 @@ const Milestones = () => {
                     .sort((a, b) => new Date(a.date) - new Date(b.date))
                     .map(m => (
                         <MilestoneCard key={m.id} completed={m.completed}>
+                            <RemoveButton onClick={(e) => handleRemoveMilestone(e, m.id)}>
+                                <FaTrash />
+                            </RemoveButton>
                             <MilestoneInfo>
                                 <MilestoneName>{m.name}</MilestoneName>
                                 <MilestoneDate>- {format(new Date(m.date), 'do MMMM yyyy')}</MilestoneDate>

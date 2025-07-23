@@ -20,7 +20,7 @@ const ControlButton = styled.button`
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    
+
     &:hover {
         background: ${({ theme }) => theme.accent};
         color: white;
@@ -29,7 +29,6 @@ const ControlButton = styled.button`
 `;
 
 const Timer = () => {
-    // ... timer logic from before (I will fix the useEffect bug here as planned)
     const [seconds, setSeconds] = useState(0);
     const [isActive, setIsActive] = useState(true);
 
@@ -40,13 +39,16 @@ const Timer = () => {
                 setSeconds(s => s + 1);
             }, 1000);
         }
-        // The `else` block is removed to fix the bug.
-        // `clearInterval` is only called on cleanup or when isActive becomes false.
         return () => clearInterval(interval);
-    }, [isActive]); // The `seconds` dependency is removed to fix the bug.
+    }, [isActive]);
 
     const formatTime = (timeInSeconds) => {
-        // ... formatTime logic from before
+        const hours = Math.floor(timeInSeconds / 3600);
+        const minutes = Math.floor((timeInSeconds % 3600) / 60);
+        const secs = timeInSeconds % 60;
+        return [hours, minutes, secs]
+            .map(v => v < 10 ? "0" + v : v)
+            .join(":");
     };
 
     return (

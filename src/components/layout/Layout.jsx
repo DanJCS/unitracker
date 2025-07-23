@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
 import Sidebar from './Sidebar';
 import MobileMenuButton from './MobileMenuButton';
+import SettingsModal from "../common/SettingsModal.jsx";
 
 const AppContainer = styled.div`
     min-height: 100vh;
@@ -35,14 +36,17 @@ const PageContent = styled.div`
 
 const Layout = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [isSettingsOpen, setSettingsOpen] = useState(false);
     const sidebarWidth = isSidebarCollapsed ? 80 : 250;
 
     return (
         <AppContainer>
+            <SettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} />
             <MobileMenuButton onClick={() => setSidebarCollapsed(false)} />
             <Sidebar
                 isCollapsed={isSidebarCollapsed}
                 setCollapsed={setSidebarCollapsed}
+                onSettingsClick={() => setSettingsOpen(true)} // Pass handler to button
             />
             <ContentWrapper sidebarWidth={sidebarWidth}>
                 <PageContent>

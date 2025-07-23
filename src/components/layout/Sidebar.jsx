@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAppContext } from '../../context/AppContext';
-import { FaHome, FaTasks, FaFlag, FaMoon, FaSun, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaHome, FaTasks, FaFlag, FaMoon, FaSun, FaChevronLeft, FaChevronRight, FaCog } from 'react-icons/fa';
 
 const SidebarContainer = styled.div`
     width: ${({ isCollapsed }) => (isCollapsed ? '80px' : '250px')};
@@ -99,6 +99,33 @@ const ThemeToggle = styled.button`
     }
 `;
 
+const BottomActions = styled.div`
+    margin-top: auto;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+`;
+
+const ActionButton = styled.button`
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid ${({ theme }) => theme.borderColor};
+    border-radius: 4px;
+    background: transparent;
+    color: ${({ theme }) => theme.text};
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: ${({ isCollapsed }) => (isCollapsed ? 'center' : 'flex-start')};
+    gap: 0.5rem;
+
+    &:hover {
+        background: ${({ theme }) => theme.accent}10;
+    }
+`;
+
 const MobileOverlay = styled.div`
     display: none;
 
@@ -140,10 +167,16 @@ const Sidebar = ({ isCollapsed, setCollapsed }) => {
                     {!isCollapsed && <Label>Milestones</Label>}
                 </NavItem>
 
-                <ThemeToggle onClick={toggleTheme}>
-                    <Icon>{theme === 'light' ? <FaMoon /> : <FaSun />}</Icon>
-                    {!isCollapsed && <Label>Toggle Theme</Label>}
-                </ThemeToggle>
+                <BottomActions>
+                    <ActionButton onClick={onSettingsClick} isCollapsed={isCollapsed}>
+                        <Icon><FaCog /></Icon>
+                        {!isCollapsed && <Label>Settings</Label>}
+                    </ActionButton>
+                    <ActionButton onClick={toggleTheme} isCollapsed={isCollapsed}>
+                        <Icon>{theme === 'light' ? <FaMoon /> : <FaSun />}</Icon>
+                        {!isCollapsed && <Label>Toggle Theme</Label>}
+                    </ActionButton>
+                </BottomActions>
             </SidebarContainer>
         </>
     );

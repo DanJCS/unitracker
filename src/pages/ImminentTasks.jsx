@@ -5,6 +5,7 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { differenceInDays } from 'date-fns';
 import styled from 'styled-components';
+import { FaTrash } from 'react-icons/fa';
 
 const TasksContainer = styled.div`
     width: 100%;
@@ -95,6 +96,7 @@ const TasksList = styled.div`
 `;
 
 const TaskCard = styled.div`
+    position: relative;
     background: ${({ theme }) => theme.cardBg};
     border: 1px solid ${({ theme }) => theme.borderColor};
     padding: 1.5rem;
@@ -106,6 +108,27 @@ const TaskCard = styled.div`
     &:hover {
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         transform: translateY(-2px);
+    }
+`;
+
+const RemoveButton = styled.button`
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    color: ${({ theme }) => theme.text}60;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+        color: #ef4444; // Red color on hover
+        background: #ef44441a;
     }
 `;
 
@@ -137,7 +160,7 @@ const DatePickerWrapper = styled.div`
 `;
 
 const ImminentTasks = () => {
-    const { tasks, addTask } = useAppContext();
+    const { tasks, addTask, removeTask } = useAppContext();
     const navigate = useNavigate();
     const [name, setName] = useState('');
     const [dueDate, setDueDate] = useState(new Date());
@@ -162,10 +185,19 @@ const ImminentTasks = () => {
     };
 
     const handleTaskClick = (taskId) => {
+        // We'll keep the confirm here for navigation
         if(window.confirm("Start this task now? This will take you to the immersive zone.")) {
             navigate(`/immersive/${taskId}`);
         }
     };
+
+    const handleRemoveTask = (e, taskId) => {
+        e.stopPropagation(); // Prevents the card's navigation click
+        if (window.confirm("Are you sure you want to delete this task?")) {
+            removeTask(taskId);
+        }
+    };
+
     // This handler will manage the bullet points
     const handleApproachChange = (e) => {
         let value = e.target.value;
@@ -236,6 +268,9 @@ const ImminentTasks = () => {
             <TasksList>
                 {sortedTasks.map(task => (
                     <TaskCard key={task.id} onClick={() => handleTaskClick(task.id)}>
+                        <RemoveButton onClick={(e) => handleRemoveTask(e, task.id)}>
+                            <FaTrash />
+                        </RemoveButton>
                         <TaskName>{task.name}</TaskName>
                         <TaskDue>Due in: {differenceInDays(new Date(task.dueDate), new Date())} days</TaskDue>
                     </TaskCard>
