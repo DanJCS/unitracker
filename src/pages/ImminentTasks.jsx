@@ -144,6 +144,17 @@ const ActionButton = styled.button`
     }
 `;
 
+const BottomRightButton = styled(ActionButton)`
+    position: absolute; bottom: 0.5rem; right: 0.5rem; top: unset;
+`;
+
+const ViewCompletedButton = styled(SubmitButton)`
+    background: transparent;
+    color: ${({ theme }) => theme.accent};
+    border: 1px solid ${({ theme }) => theme.accent};
+    margin-top: 1rem;
+`;
+
 const TaskName = styled.h3`
     margin: 0 0 0.5rem 0;
     color: ${({ theme }) => theme.text};
@@ -172,7 +183,7 @@ const DatePickerWrapper = styled.div`
 `;
 
 const ImminentTasks = () => {
-    const { tasks, addTask, removeTask, updateTask } = useAppContext();
+    const { tasks, addTask, removeTask, updateTask, toggleTaskCompletion } = useAppContext();
     const navigate = useNavigate();
     const [name, setName] = useState('');
     const [dueDate, setDueDate] = useState(new Date());
@@ -180,21 +191,20 @@ const ImminentTasks = () => {
     const approachRef = useRef(null);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
+    const [isCompletedModalOpen, setCompletedModalOpen] = useState(false);
 
-    const sortedTasks = useMemo(() => {
-        return [...tasks].sort((a, b) =>
-            differenceInDays(new Date(a.dueDate), new Date()) -
-            differenceInDays(new Date(b.dueDate), new Date())
-        );
+    const { incompleteTasks, completedTasks } = useMemo(() => {
+        const incomplete = tasks.filter(t => !t.completed).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+        const complete = tasks.filter(t => t.completed).sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
+        return { incompleteTasks: incomplete, completedTasks: complete };
     }, [tasks]);
 
-    const handleSubmit = (e) => { e.preventDefault(); if (!name.trim()) return; const finalApproach = approach.trim() === '•' ? '' : approach; addTask({ name, dueDate: dueDate.toISOString(), approach: finalApproach }); setName(''); setApproach(''); };
+    const handleSubmit = (e) => { e.preventDefault(); if (!name.trim()) return; addTask({ name, dueDate: dueDate.toISOString(), approach }); setName(''); setApproach(''); };
     const handleTaskClick = (taskId) => { if(window.confirm("Start this task now? This will take you to the immersive zone.")) { navigate(`/immersive/${taskId}`); } };
     const handleRemoveTask = (e, taskId) => { e.stopPropagation(); if (window.confirm("Are you sure you want to delete this task?")) { removeTask(taskId); }};
-    const handleApproachChange = (e) => { let value = e.target.value; if (value === '') { setApproach(''); return; } if (!value.startsWith('• ')) { value = '• ' + value.trimStart(); } setApproach(value); };
-    const handleApproachKeyDown = (e) => { if (e.key === 'Enter') { e.preventDefault(); const { value, selectionStart } = e.target; const newValue = value.substring(0, selectionStart) + '\n• ' + value.substring(selectionStart); setApproach(newValue); requestAnimationFrame(() => { if (approachRef.current) { const newCursorPosition = selectionStart + 3; approachRef.current.selectionStart = newCursorPosition; approachRef.current.selectionEnd = newCursorPosition; } }); } };
     const handleOpenEditModal = (e, task) => { e.stopPropagation(); setEditingTask(task); setEditModalOpen(true); };
     const handleSaveTask = (updatedData) => { if (editingTask) { updateTask(editingTask.id, updatedData); } };
+    const handleToggleComplete = (e, taskId) => { e.stopPropagation(); toggleTaskCompletion(taskId); };
 
     return (
         <TasksContainer>
@@ -205,29 +215,33 @@ const ImminentTasks = () => {
                 <DatePickerWrapper>
                     <DatePicker selected={dueDate} onChange={date => setDueDate(date)} dateFormat="MMMM d, yyyy" />
                 </DatePickerWrapper>
-                <TextArea ref={approachRef} value={approach} onChange={handleApproachChange} onKeyDown={handleApproachKeyDown} placeholder="Method of approach (bullet points)" />
+                <TextArea ref={approachRef} value={approach} onChange={e => setApproach(e.target.value)} placeholder="Method of approach (bullet points)" />
                 <SubmitButton type="submit">Add Task</SubmitButton>
             </FormContainer>
+            <ViewCompletedButton onClick={() => setCompletedModalOpen(true)}>
+                View Completed Tasks ({completedTasks.length})
+            </ViewCompletedButton>
             <TasksList>
-                {sortedTasks.map(task => {
+                {incompleteTasks.map(task => {
                     const daysLeft = differenceInDays(new Date(task.dueDate), new Date());
                     return (
                         <TaskCard key={task.id} onClick={() => handleTaskClick(task.id)} daysLeft={daysLeft}>
                             <CardActions>
-                                <ActionButton onClick={(e) => handleOpenEditModal(e, task)} hoverColor="#6366f1" hoverBg="#6366f11a">
-                                    <FaPencilAlt />
-                                </ActionButton>
-                                <ActionButton onClick={(e) => handleRemoveTask(e, task.id)}>
-                                    <FaTrash />
-                                </ActionButton>
+                                <ActionButton onClick={(e) => handleOpenEditModal(e, task)} hoverColor="#6366f1" hoverBg="#6366f11a"><FaPencilAlt /></ActionButton>
+                                <ActionButton onClick={(e) => handleRemoveTask(e, task.id)}><FaTrash /></ActionButton>
                             </CardActions>
                             <TaskName>{task.name}</TaskName>
                             <TaskDue>{daysLeft < 0 ? `Overdue by ${Math.abs(daysLeft)} days` : `Due in: ${daysLeft} days`}</TaskDue>
+                            <TimeSpentDisplay>Time Spent: {formatTimeSpent(task.timeSpent)}</TimeSpentDisplay>
+                            <BottomRightButton onClick={(e) => handleToggleComplete(e, task.id)} hoverColor="#22c55e" hoverBg="#22c55e1a">
+                                <FaCheckCircle />
+                            </BottomRightButton>
                         </TaskCard>
                     );
                 })}
             </TasksList>
             <EditModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} item={editingTask} onSave={handleSaveTask} />
+            <CompletedTasksModal isOpen={isCompletedModalOpen} onClose={() => setCompletedModalOpen(false)} tasks={completedTasks} />
         </TasksContainer>
     );
 };

@@ -9,12 +9,11 @@ const Container = styled.div`
 `;
 
 const BarContainer = styled.div`
-    position: relative;
-    width: 100%;
-    height: 20px;
-    background: ${({ theme }) => theme.cardBg};
-    border-radius: 10px;
+    position: relative; width: 100%; height: 20px;
+    background: ${({ theme }) => theme.cardBg}; border-radius: 10px;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 2rem; // Add margin to give labels space
+    margin-bottom: 2rem;
 `;
 
 const ProgressFill = styled.div`
@@ -27,44 +26,47 @@ const ProgressFill = styled.div`
 
 const MilestoneWrapper = styled.div`
     position: absolute;
-    top: 50%;
     left: ${({ position }) => position}%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    z-index: 10;
+    // Use top/bottom based on vertical offset
+    top: ${({ vOffset }) => vOffset === 'up' ? '50%' : 'auto'};
+    bottom: ${({ vOffset }) => vOffset === 'down' ? '50%' : 'auto'};
+    transform: translate(-50%, ${({ vOffset }) => vOffset === 'up' ? '-100%' : '100%'});
+    display: flex; flex-direction: column; align-items: center; z-index: 10;
 `;
 
 const MilestoneLabel = styled.span`
-    position: absolute;
-    bottom: 28px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: ${({ theme }) => theme.text};
-    background: ${({ theme }) => theme.cardBg};
-    padding: 4px 8px;
-    border-radius: 6px;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    transform: translateX(-50%);
-    left: 50%;
+    position: relative;
+    font-size: 0.8rem; font-weight: 500; color: ${({ theme }) => theme.text};
+    background: ${({ theme }) => theme.cardBg}; padding: 6px 10px;
+    border-radius: 6px; white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     border: 1px solid ${({ theme }) => theme.borderColor};
+    
+    // Creates the speech bubble pointer
+    &::after {
+        content: ''; position: absolute; left: 50%;
+        transform: translateX(-50%);
+        width: 0; height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid ${({ theme }) => theme.borderColor};
+        // Position pointer at top or bottom
+        top: ${({ vOffset }) => vOffset === 'up' ? '100%' : 'auto'};
+        bottom: ${({ vOffset }) => vOffset === 'down' ? '100%' : 'auto'};
+        border-bottom: ${({ vOffset }) => vOffset === 'up' ? 'none' : `6px solid ${theme.borderColor}`};
+        border-top: ${({ vOffset }) => vOffset === 'down' ? 'none' : `6px solid ${theme.borderColor}`};
+    }
 `;
 
 const MilestoneMarker = styled.div`
-  width: 24px;
-  height: 24px;
-  background: ${({ completed, theme }) => (completed ? '#22c55e' : '#f97316')};
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 0.7rem;
-  z-index: 20;
+    width: 24px; height: 24px;
+    background: ${({ completed }) => (completed ? '#22c55e' : '#f97316')};
+    border-radius: 50%; border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 0.7rem; z-index: 20;
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
 `;
 
 const DatesContainer = styled.div`
@@ -77,31 +79,54 @@ const DatesContainer = styled.div`
 `;
 
 const OverviewProgressBar = ({ startDate, endDate, milestones }) => {
+    const totalDays = differenceInDays(endDate, startDate) || 1;
+
+    const positionedMilestones = useMemo(() => {
+        if (!milestones || milestones.length === 0) return [];
+
+        const sorted = milestones.map(m => ({
+            ...m,
+            position: (differenceInDays(new Date(m.date), startDate) / totalDays) * 100
+        })).sort((a, b) => a.position - b.position);
+
+        let lastPos = -10;
+        return sorted.map((m, index) => {
+            let vOffset = 'up';
+            if (m.position < lastPos + 8) { // 8% threshold for overlap
+                vOffset = sorted[index - 1].vOffset === 'up' ? 'down' : 'up';
+            }
+            lastPos = m.position;
+            return { ...m, vOffset };
+        });
+    }, [milestones, startDate, totalDays]);
+
     const today = new Date();
-    const totalDays = differenceInDays(endDate, startDate);
     const elapsedDays = differenceInDays(today, startDate);
     const progress = Math.max(0, Math.min(100, (elapsedDays / totalDays) * 100));
-
-    const getMilestonePosition = (milestoneDate) => {
-        const daysFromStart = differenceInDays(new Date(milestoneDate), startDate);
-        return (daysFromStart / totalDays) * 100;
-    };
 
     return (
         <Container>
             <BarContainer>
                 <ProgressFill progress={progress} />
-                {milestones.map(m => (
+                {positionedMilestones.map(m => (
                     <MilestoneWrapper
                         key={m.id}
-                        position={getMilestonePosition(m.date)}
+                        position={m.position}
+                        vOffset={m.vOffset}
                         title={`${m.name} - ${format(new Date(m.date), 'do MMM')}`}
                     >
-                        <MilestoneLabel>{m.name}</MilestoneLabel>
-                        <MilestoneMarker completed={m.completed}>
-                            {m.completed ? <FaCheck /> : <FaHourglassHalf />}
-                        </MilestoneMarker>
+                        <MilestoneLabel vOffset={m.vOffset}>{m.name}</MilestoneLabel>
                     </MilestoneWrapper>
+                ))}
+                {/* Markers are rendered separately to sit on the bar */}
+                {positionedMilestones.map(m => (
+                    <MilestoneMarker
+                        key={`${m.id}-marker`}
+                        style={{ left: `${m.position}%` }}
+                        completed={m.completed}
+                    >
+                        {m.completed ? <FaCheck /> : <FaHourglassHalf />}
+                    </MilestoneMarker>
                 ))}
             </BarContainer>
             <DatesContainer>

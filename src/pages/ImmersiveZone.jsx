@@ -1,3 +1,5 @@
+// src/pages/ImmersiveZone.jsx
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
@@ -6,38 +8,35 @@ import BeatingCircle from '../components/common/BeatingCircle';
 import Timer from '../components/common/Timer';
 
 const ZoneContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start; /* Align to the top */
-    /* height: 100vh; <-- REMOVE THIS */
-        /* background: ${({ theme }) => theme.body}; <-- This is now handled by Layout */
-    color: ${({ theme }) => theme.text};
-    text-align: center; /* Center align text content */
-    padding-top: 2rem; /* Add some space at the top */
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-start; color: ${({ theme }) => theme.text};
+    text-align: center; padding-top: 2rem;
 `;
 
 const TaskName = styled.h1`
-  font-size: 3rem;
-  margin-bottom: 2rem;
+    font-size: 3rem; margin-bottom: 2rem;
 `;
 
 const ImmersiveZone = () => {
     const { taskId } = useParams();
-    const { getTaskById } = useAppContext();
+    const { getTaskById, logTimeForTask } = useAppContext();
     const task = getTaskById(taskId);
 
     if (!task) {
         return <div>Task not found!</div>;
     }
 
-    const approachPoints = task.approach.split('\n').filter(line => line.trim() !== '');
+    const approachPoints = task.approach ? task.approach.split('\n').filter(line => line.trim() !== '') : [];
+
+    const handleSessionEnd = (seconds) => {
+        logTimeForTask(taskId, seconds);
+    };
 
     return (
         <ZoneContainer>
             <TaskName>{task.name}</TaskName>
             <BeatingCircle points={approachPoints} />
-            <Timer />
+            <Timer onSessionEnd={handleSessionEnd} />
         </ZoneContainer>
     );
 };
