@@ -96,12 +96,14 @@ const MilestoneCard = styled.div`
     position: relative; display: flex; justify-content: space-between; align-items: center;
     background: ${({ theme }) => theme.cardBg}; padding: 1.5rem; border-radius: 12px;
     border-left: 5px solid ${({ completed, theme }) => (completed ? '#22c55e' : '#EF4444')};
-    transition: box-shadow 0.2s ease;
+    transition: all 0.2s ease;
     box-shadow: ${({ daysLeft }) => getGlow(daysLeft)};
     min-height: 100px;
+    cursor: pointer; // Make the whole card clickable
+    &:hover { transform: translateY(-2px); }
     @media (max-width: 768px) {
         flex-direction: column; gap: 1rem; text-align: center;
-        padding-bottom: 5rem; // Increased padding to avoid overlap
+        padding-bottom: 5rem;
     }
 `;
 
@@ -180,17 +182,38 @@ const DatePickerWrapper = styled.div`
     }
 `;
 
+const TextArea = styled.textarea`
+    padding: 0.75rem;
+    border: 1px solid ${({ theme }) => theme.borderColor};
+    border-radius: 8px;
+    background: ${({ theme }) => theme.body};
+    color: ${({ theme }) => theme.text};
+    font-size: 1rem;
+    min-height: 100px;
+    resize: vertical;
+    
+    &:focus {
+        outline: none;
+        border-color: ${({ theme }) => theme.accent};
+    }
+`;
+
 const Milestones = () => {
     const { milestones, addMilestone, toggleMilestoneCompletion, removeMilestone, updateMilestone } = useAppContext();
     const [name, setName] = useState('');
     const [date, setDate] = useState(new Date());
+    const [description, setDescription] = useState('');
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [editingMilestone, setEditingMilestone] = useState(null);
+    const [isDescriptionModalOpen, setDescriptionModalOpen] = useState(false); // <-- STATE FOR NEW MODAL
+    const [selectedMilestone, setSelectedMilestone] = useState(null); // <-- STATE FOR NEW MODAL
 
-    const handleSubmit = (e) => { e.preventDefault(); if (!name.trim()) return; addMilestone({ name, date: date.toISOString().split('T')[0] }); setName(''); };
+    const handleSubmit = (e) => { e.preventDefault(); if (!name.trim()) return; addMilestone({ name, date: date.toISOString().split('T')[0], description }); setName(''); setDescription(''); };
     const handleRemoveMilestone = (e, milestoneId) => { e.stopPropagation(); if (window.confirm("Are you sure you want to delete this milestone?")) { removeMilestone(milestoneId); }};
     const handleOpenEditModal = (e, milestone) => { e.stopPropagation(); setEditingMilestone(milestone); setEditModalOpen(true); };
     const handleSaveMilestone = (updatedData) => { if (editingMilestone) { updateMilestone(editingMilestone.id, updatedData); } };
+    const handleToggleCompletion = (e, id) => { e.stopPropagation(); toggleMilestoneCompletion(id); };
+    const handleOpenDescriptionModal = (milestone) => { setSelectedMilestone(milestone); setDescriptionModalOpen(true); };
 
     return (
         <MilestonesContainer>
@@ -199,28 +222,23 @@ const Milestones = () => {
                 <FormTitle>Add New Milestone</FormTitle>
                 <Input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Milestone Name (e.g., Final Report Due)" required />
                 <DatePickerWrapper><DatePicker selected={date} onChange={d => setDate(d)} dateFormat="MMMM d, yyyy" /></DatePickerWrapper>
+                <TextArea value={description} onChange={e => setDescription(e.target.value)} placeholder="Add a description... (supports Markdown)" />
                 <SubmitButton type="submit">Add Milestone</SubmitButton>
             </FormContainer>
             <MilestonesList>
                 {milestones.sort((a, b) => new Date(a.date) - new Date(b.date)).map(m => {
                     const daysLeft = differenceInDays(new Date(m.date), new Date());
                     return (
-                        <MilestoneCard key={m.id} completed={m.completed} daysLeft={daysLeft}>
+                        <MilestoneCard key={m.id} completed={m.completed} daysLeft={daysLeft} onClick={() => handleOpenDescriptionModal(m)}>
                             <CardActions>
-                                <ActionButton onClick={(e) => handleOpenEditModal(e, m)} hoverColor="#6366f1" hoverBg="#6366f11a">
-                                    <FaPencilAlt />
-                                </ActionButton>
-                                <ActionButton onClick={(e) => handleRemoveMilestone(e, m.id)}>
-                                    <FaTrash />
-                                </ActionButton>
+                                <ActionButton onClick={(e) => handleOpenEditModal(e, m)} hoverColor="#6366f1" hoverBg="#6366f11a"><FaPencilAlt /></ActionButton>
+                                <ActionButton onClick={(e) => handleRemoveMilestone(e, m.id)}><FaTrash /></ActionButton>
                             </CardActions>
                             <MilestoneInfo>
                                 <MilestoneName>{m.name}</MilestoneName>
                                 <MilestoneDate>- {format(new Date(m.date), 'do MMMM yyyy')}</MilestoneDate>
                             </MilestoneInfo>
-
-                            {/* --- CHANGE 3: Updated Button JSX with icon and prop --- */}
-                            <CompleteButton completed={m.completed} onClick={() => toggleMilestoneCompletion(m.id)}>
+                            <CompleteButton completed={m.completed} onClick={(e) => handleToggleCompletion(e, m.id)}>
                                 {m.completed ? <FaUndo /> : <FaCheck />}
                                 {m.completed ? 'Mark as Incomplete' : 'Mark as Complete'}
                             </CompleteButton>
@@ -229,8 +247,8 @@ const Milestones = () => {
                 })}
             </MilestonesList>
             <EditModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} item={editingMilestone} onSave={handleSaveMilestone} />
+            <DescriptionModal isOpen={isDescriptionModalOpen} onClose={() => setDescriptionModalOpen(false)} milestone={selectedMilestone} />
         </MilestonesContainer>
     );
 }
-
 export default Milestones;

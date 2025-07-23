@@ -48,16 +48,18 @@ const Button = styled.button`
 const EditModal = ({ isOpen, onClose, item, onSave }) => {
     const [name, setName] = useState('');
     const [date, setDate] = useState(new Date());
-    const [approach, setApproach] = useState('');
+    const [details, setDetails] = useState('');
 
     useEffect(() => {
         if (item) {
             setName(item.name || '');
-            // Handle both `dueDate` (for tasks) and `date` (for milestones)
             setDate(new Date(item.dueDate || item.date));
-            // The approach field only exists for tasks
+
+            // Set details from either 'approach' or 'description'
             if (item.approach !== undefined) {
-                setApproach(item.approach);
+                setDetails(item.approach);
+            } else if (item.description !== undefined) {
+                setDetails(item.description);
             }
         }
     }, [item]);
@@ -66,16 +68,19 @@ const EditModal = ({ isOpen, onClose, item, onSave }) => {
 
     const handleSave = () => {
         const updatedData = { name, date: date.toISOString() };
-        // Use 'dueDate' for tasks to match the data structure
         if (item.dueDate) {
             updatedData.dueDate = updatedData.date;
+            updatedData.approach = details;
         }
-        if (item.approach !== undefined) {
-            updatedData.approach = approach;
+        if (item.description !== undefined) {
+            updatedData.description = details;
         }
         onSave(updatedData);
         onClose();
     };
+
+    const hasDetails = item && (item.approach !== undefined || item.description !== undefined);
+    const detailsLabel = item.approach !== undefined ? 'Method of Approach' : 'Description';
 
     return (
         <ModalOverlay onClick={onClose}>
@@ -89,10 +94,10 @@ const EditModal = ({ isOpen, onClose, item, onSave }) => {
                     <label>Date</label>
                     <DatePicker selected={date} onChange={d => setDate(d)} className="date-picker-full-width" />
                 </FormGroup>
-                {item.approach !== undefined && (
+                {hasDetails && (
                     <FormGroup>
-                        <label>Method of Approach</label>
-                        <TextArea value={approach} onChange={e => setApproach(e.target.value)} />
+                        <label>{detailsLabel}</label>
+                        <TextArea value={details} onChange={e => setDetails(e.target.value)} />
                     </FormGroup>
                 )}
                 <ButtonGroup>

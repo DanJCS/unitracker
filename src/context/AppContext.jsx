@@ -18,7 +18,17 @@ export const AppProvider = ({ children }) => {
     const [semesterEnd, setSemesterEnd] = usePersistentState('semesterEnd', defaultEndDate);
 
     // --- Milestone Functions (unchanged) ---
-    const addMilestone = (milestone) => { setMilestones([...milestones, { ...milestone, id: uuidv4(), completed: false }]); };
+    const addMilestone = (milestone) => {
+        // Be explicit about the milestone shape
+        const newMilestone = {
+            id: uuidv4(),
+            name: milestone.name,
+            date: milestone.date,
+            description: milestone.description || '', // Ensure description exists
+            completed: false,
+        };
+        setMilestones([...milestones, newMilestone]);
+    };
     const removeMilestone = (id) => { setMilestones(milestones.filter(m => m.id !== id)); };
     const toggleMilestoneCompletion = (id) => { setMilestones(milestones.map(m => m.id === id ? { ...m, completed: !m.completed } : m)); };
     const updateMilestone = (id, updatedData) => { setMilestones(milestones.map(m => m.id === id ? { ...m, ...updatedData } : m)); };
@@ -28,7 +38,7 @@ export const AppProvider = ({ children }) => {
         const newTask = {
             ...task,
             id: uuidv4(),
-            timeSpent: 0, // in seconds
+            timeSpent: 0,
             completed: false,
         };
         setTasks([...tasks, newTask]);
