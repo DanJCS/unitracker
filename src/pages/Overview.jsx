@@ -2,39 +2,72 @@ import React from 'react';
 import styled from 'styled-components';
 import { useAppContext } from '../context/AppContext';
 import OverviewProgressBar from '../components/OverviewProgressBar';
-import { differenceInDays } from 'date-fns'; // NEW
+import { differenceInDays } from 'date-fns';
 
 const OverviewContainer = styled.div`
-  text-align: center; /* Center the title */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 2rem;
 `;
 
-// NEW: Container for the stats
+const Title = styled.h1`
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: ${({ theme }) => theme.text};
+
+    @media (max-width: 768px) {
+        font-size: 2rem;
+    }
+`;
+
 const StatsContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 3rem;
-  margin: 2rem 0;
-  text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    max-width: 500px;
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+        gap: 1rem;
+    }
 `;
 
 const StatBox = styled.div`
-  background: ${({ theme }) => theme.cardBg};
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    background: ${({ theme }) => theme.cardBg};
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
 `;
 
 const StatValue = styled.p`
-  font-size: 2rem;
-  font-weight: 700;
-  color: ${({ theme }) => theme.accent};
-  margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: ${({ theme }) => theme.accent};
+    margin: 0;
+    line-height: 1;
 `;
 
 const StatLabel = styled.p`
-    margin: 0.25rem 0 0 0;
+    margin: 0.5rem 0 0 0;
     font-size: 0.9rem;
-    color: ${({ theme }) => theme.text}99; /* Faded text color */
+    color: ${({ theme }) => theme.text}99;
+    font-weight: 500;
+`;
+
+const ProgressContainer = styled.div`
+    width: 100%;
+    max-width: 600px;
+    margin-top: 1rem;
 `;
 
 const Overview = () => {
@@ -43,7 +76,6 @@ const Overview = () => {
     const semesterEnd = new Date('2025-10-27');
     const today = new Date();
 
-    // NEW: Calculations for stats
     const totalDays = differenceInDays(semesterEnd, semesterStart);
     const elapsedDays = differenceInDays(today, semesterStart);
     const daysLeft = Math.max(0, differenceInDays(semesterEnd, today));
@@ -51,9 +83,8 @@ const Overview = () => {
 
     return (
         <OverviewContainer>
-            <h1>Semester Overview</h1>
+            <Title>Semester Overview</Title>
 
-            {/* NEW: Display the stats */}
             <StatsContainer>
                 <StatBox>
                     <StatValue>{Math.round(percentComplete)}%</StatValue>
@@ -65,11 +96,13 @@ const Overview = () => {
                 </StatBox>
             </StatsContainer>
 
-            <OverviewProgressBar
-                startDate={semesterStart}
-                endDate={semesterEnd}
-                milestones={milestones}
-            />
+            <ProgressContainer>
+                <OverviewProgressBar
+                    startDate={semesterStart}
+                    endDate={semesterEnd}
+                    milestones={milestones}
+                />
+            </ProgressContainer>
         </OverviewContainer>
     );
 };

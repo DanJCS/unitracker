@@ -6,16 +6,133 @@ import "react-datepicker/dist/react-datepicker.css";
 import { differenceInDays } from 'date-fns';
 import styled from 'styled-components';
 
-// Styled components for the page, form, task list, etc.
+const TasksContainer = styled.div`
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+`;
+
+const Title = styled.h1`
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: ${({ theme }) => theme.text};
+    text-align: center;
+`;
+
+const FormContainer = styled.form`
+    background: ${({ theme }) => theme.cardBg};
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+`;
+
+const FormTitle = styled.h2`
+    margin: 0 0 1rem 0;
+    text-align: center;
+    color: ${({ theme }) => theme.text};
+`;
+
+const Input = styled.input`
+    padding: 0.75rem;
+    border: 1px solid ${({ theme }) => theme.borderColor};
+    border-radius: 8px;
+    background: ${({ theme }) => theme.body};
+    color: ${({ theme }) => theme.text};
+    font-size: 1rem;
+    
+    &:focus {
+        outline: none;
+        border-color: ${({ theme }) => theme.accent};
+    }
+`;
+
+const TextArea = styled.textarea`
+    padding: 0.75rem;
+    border: 1px solid ${({ theme }) => theme.borderColor};
+    border-radius: 8px;
+    background: ${({ theme }) => theme.body};
+    color: ${({ theme }) => theme.text};
+    font-size: 1rem;
+    min-height: 100px;
+    resize: vertical;
+    
+    &:focus {
+        outline: none;
+        border-color: ${({ theme }) => theme.accent};
+    }
+`;
+
+const SubmitButton = styled.button`
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    background: ${({ theme }) => theme.accent};
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    
+    &:hover {
+        opacity: 0.9;
+    }
+`;
+
+const TasksList = styled.div`
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+`;
+
 const TaskCard = styled.div`
     background: ${({ theme }) => theme.cardBg};
     border: 1px solid ${({ theme }) => theme.borderColor};
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border-radius: 8px;
+    padding: 1.5rem;
+    border-radius: 12px;
     cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    
     &:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+`;
+
+const TaskName = styled.h3`
+    margin: 0 0 0.5rem 0;
+    color: ${({ theme }) => theme.text};
+`;
+
+const TaskDue = styled.p`
+    margin: 0;
+    color: ${({ theme }) => theme.text}99;
+    font-weight: 500;
+`;
+
+const DatePickerWrapper = styled.div`
+    .react-datepicker-wrapper {
+        width: 100%;
+    }
+    
+    .react-datepicker__input-container input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid ${({ theme }) => theme.borderColor};
+        border-radius: 8px;
+        background: ${({ theme }) => theme.body};
+        color: ${({ theme }) => theme.text};
+        font-size: 1rem;
     }
 `;
 
@@ -35,6 +152,7 @@ const ImminentTasks = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (!name.trim()) return;
         addTask({ name, dueDate: dueDate.toISOString(), approach });
         setName('');
         setApproach('');
@@ -47,26 +165,41 @@ const ImminentTasks = () => {
     };
 
     return (
-        <div>
-            <h1>Imminent Tasks</h1>
-            {/* Form for adding a new task */}
-            <form onSubmit={handleSubmit}>
-                <input value={name} onChange={e => setName(e.target.value)} placeholder="Task Name" />
-                <DatePicker selected={dueDate} onChange={date => setDueDate(date)} />
-                <textarea value={approach} onChange={e => setApproach(e.target.value)} placeholder="Method of approach (bullet points)"/>
-                <button type="submit">Add Task</button>
-            </form>
+        <TasksContainer>
+            <Title>Imminent Tasks</Title>
 
-            {/* List of sorted tasks */}
-            <div>
+            <FormContainer onSubmit={handleSubmit}>
+                <FormTitle>Add New Task</FormTitle>
+                <Input
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Task Name"
+                    required
+                />
+                <DatePickerWrapper>
+                    <DatePicker
+                        selected={dueDate}
+                        onChange={date => setDueDate(date)}
+                        dateFormat="MMMM d, yyyy"
+                    />
+                </DatePickerWrapper>
+                <TextArea
+                    value={approach}
+                    onChange={e => setApproach(e.target.value)}
+                    placeholder="Method of approach (bullet points)"
+                />
+                <SubmitButton type="submit">Add Task</SubmitButton>
+            </FormContainer>
+
+            <TasksList>
                 {sortedTasks.map(task => (
                     <TaskCard key={task.id} onClick={() => handleTaskClick(task.id)}>
-                        <h3>{task.name}</h3>
-                        <p>Due in: {differenceInDays(new Date(task.dueDate), new Date())} days</p>
+                        <TaskName>{task.name}</TaskName>
+                        <TaskDue>Due in: {differenceInDays(new Date(task.dueDate), new Date())} days</TaskDue>
                     </TaskCard>
                 ))}
-            </div>
-        </div>
+            </TasksList>
+        </TasksContainer>
     );
 };
 
