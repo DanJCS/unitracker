@@ -12,20 +12,22 @@ const Circle = styled.div`
     width: 300px;
     height: 300px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
+    /* The background now uses a semi-transparent version of the text color for contrast */
+    background: ${({ theme }) => theme.name === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.1)'};
     backdrop-filter: blur(10px);
-    color: white;
+    /* The text color is now inherited from the theme */
+    color: ${({ theme }) => theme.text};
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
     padding: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px ${({ theme }) => theme.accent}40;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 0 20px ${({ theme }) => theme.accent}40;
     animation: ${beat} 3s infinite ease-in-out;
     font-size: 1.25rem;
     line-height: 1.6;
-    border: 2px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid ${({ theme }) => theme.borderColor};
 `;
 
 const PointText = styled.div`

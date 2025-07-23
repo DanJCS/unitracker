@@ -6,13 +6,15 @@ import BeatingCircle from '../components/common/BeatingCircle';
 import Timer from '../components/common/Timer';
 
 const ZoneContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background: ${({ theme }) => theme.body};
-  color: ${({ theme }) => theme.text};
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Align to the top */
+    /* height: 100vh; <-- REMOVE THIS */
+        /* background: ${({ theme }) => theme.body}; <-- This is now handled by Layout */
+    color: ${({ theme }) => theme.text};
+    text-align: center; /* Center align text content */
+    padding-top: 2rem; /* Add some space at the top */
 `;
 
 const TaskName = styled.h1`

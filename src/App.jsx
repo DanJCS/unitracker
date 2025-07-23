@@ -12,10 +12,11 @@ import ImmersiveZone from './pages/ImmersiveZone';
 
 function App() {
     const { theme } = useAppContext();
-    // The Immersive Zone gets its own special theme
-    const currentTheme = window.location.pathname.startsWith('/immersive')
-        ? immersiveTheme
-        : theme === 'light' ? lightTheme : darkTheme;
+    const currentTheme = theme === 'light' ? lightTheme : darkTheme;
+
+    // The logic to force the immersive theme is no longer needed here,
+    // as the page will now inherit the globally selected theme.
+    // We've simplified the `currentTheme` selection.
 
     return (
         <ThemeProvider theme={currentTheme}>
@@ -26,8 +27,11 @@ function App() {
                         <Route index element={<Overview />} />
                         <Route path="tasks" element={<ImminentTasks />} />
                         <Route path="milestones" element={<Milestones />} />
+                        {/* The immersive route is now a child of Layout */}
+                        <Route path="immersive/:taskId" element={<ImmersiveZone />} />
                     </Route>
-                    <Route path="/immersive/:taskId" element={<ImmersiveZone />} />
+                    {/* This standalone route is no longer needed */}
+                    {/* <Route path="/immersive/:taskId" element={<ImmersiveZone />} /> */}
                 </Routes>
             </Router>
         </ThemeProvider>

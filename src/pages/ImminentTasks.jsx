@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import DatePicker from 'react-datepicker';
@@ -142,6 +142,7 @@ const ImminentTasks = () => {
     const [name, setName] = useState('');
     const [dueDate, setDueDate] = useState(new Date());
     const [approach, setApproach] = useState('');
+    const approachRef = useRef(null);
 
     const sortedTasks = useMemo(() => {
         return [...tasks].sort((a, b) =>
@@ -153,7 +154,9 @@ const ImminentTasks = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        addTask({ name, dueDate: dueDate.toISOString(), approach });
+        // Ensure the approach text is clean before submitting
+        const finalApproach = approach.trim() === '•' ? '' : approach;
+        addTask({ name, dueDate: dueDate.toISOString(), approach: finalApproach });
         setName('');
         setApproach('');
     };
@@ -163,6 +166,43 @@ const ImminentTasks = () => {
             navigate(`/immersive/${taskId}`);
         }
     };
+    // This handler will manage the bullet points
+    const handleApproachChange = (e) => {
+        let value = e.target.value;
+        // If the textarea is empty, start with a bullet point
+        if (value === '') {
+            setApproach('');
+            return;
+        }
+        if (!value.startsWith('• ')) {
+            value = '• ' + value.trimStart();
+        }
+        setApproach(value);
+    }
+
+    const handleApproachKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const { value, selectionStart } = e.target;
+
+            // Insert a newline and a bullet point at the cursor's position
+            const newValue =
+                value.substring(0, selectionStart) +
+                '\n• ' +
+                value.substring(selectionStart);
+
+            setApproach(newValue);
+
+            // Use requestAnimationFrame to set the cursor position after the re-render
+            requestAnimationFrame(() => {
+                if (approachRef.current) {
+                    const newCursorPosition = selectionStart + 3; // For '\n• '
+                    approachRef.current.selectionStart = newCursorPosition;
+                    approachRef.current.selectionEnd = newCursorPosition;
+                }
+            });
+        }
+    }
 
     return (
         <TasksContainer>
@@ -184,8 +224,10 @@ const ImminentTasks = () => {
                     />
                 </DatePickerWrapper>
                 <TextArea
+                    ref={approachRef} // Attach the ref
                     value={approach}
-                    onChange={e => setApproach(e.target.value)}
+                    onChange={handleApproachChange}
+                    onKeyDown={handleApproachKeyDown} // Add the keydown handler
                     placeholder="Method of approach (bullet points)"
                 />
                 <SubmitButton type="submit">Add Task</SubmitButton>
