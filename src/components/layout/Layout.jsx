@@ -24,15 +24,14 @@ const ContentWrapper = styled.main`
     }
 `;
 
+// --- MODIFIED CODE START ---
 const PageContent = styled.div`
     width: 100%;
-    max-width: 800px; /* Reduced for better centering like gitingest */
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+    max-width: 800px; /* This sets the content width */
+    /* By removing text-align and align-items, the container is centered, */
+    /* but the content inside flows naturally (e.g., text is left-aligned). */
 `;
+// --- MODIFIED CODE END ---
 
 const Layout = () => {
     const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
