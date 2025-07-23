@@ -6,7 +6,7 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import styled from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
-import { FaTrash, FaPencilAlt } from 'react-icons/fa'; // Added FaPencilAlt
+import { FaTrash, FaPencilAlt, FaCheck, FaUndo } from 'react-icons/fa'; // Added FaPencilAlt
 import EditModal from '../components/common/EditModal'; // Added EditModal import
 
 const MilestonesContainer = styled.div`
@@ -95,14 +95,13 @@ const getGlow = (daysLeft, theme) => {
 const MilestoneCard = styled.div`
     position: relative; display: flex; justify-content: space-between; align-items: center;
     background: ${({ theme }) => theme.cardBg}; padding: 1.5rem; border-radius: 12px;
-    border-left: 5px solid ${({ completed, theme }) => (completed ? '#3B82F6' : '#EF4444')};
+    border-left: 5px solid ${({ completed, theme }) => (completed ? '#22c55e' : '#EF4444')};
     transition: box-shadow 0.2s ease;
-    box-shadow: ${({ daysLeft, theme }) => getGlow(daysLeft, theme)};
-    min-height: 100px; // ADDED: Increases the card height
-
+    box-shadow: ${({ daysLeft }) => getGlow(daysLeft)};
+    min-height: 100px;
     @media (max-width: 768px) {
         flex-direction: column; gap: 1rem; text-align: center;
-        padding-bottom: 4rem; // ADDED: Ensures space for buttons on mobile
+        padding-bottom: 5rem; // Increased padding to avoid overlap
     }
 `;
 
@@ -135,8 +134,27 @@ const MilestoneDate = styled.span`
 `;
 
 const CompleteButton = styled.button`
-    // ... styles unchanged ...
-    // On mobile, make it a bit more prominent
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 9999px; // Pill shape
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: white;
+    transition: all 0.2s ease;
+
+    // Conditional styling based on the 'completed' prop
+    background-color: ${({ completed, theme }) => (completed ? '#22c55e' : theme.accent)};
+
+    &:hover {
+        opacity: 0.85;
+    }
+
+    // Mobile layout from your request
     @media (max-width: 768px) {
         position: absolute;
         bottom: 1rem;
@@ -200,7 +218,10 @@ const Milestones = () => {
                                 <MilestoneName>{m.name}</MilestoneName>
                                 <MilestoneDate>- {format(new Date(m.date), 'do MMMM yyyy')}</MilestoneDate>
                             </MilestoneInfo>
-                            <CompleteButton onClick={() => toggleMilestoneCompletion(m.id)}>
+
+                            {/* --- CHANGE 3: Updated Button JSX with icon and prop --- */}
+                            <CompleteButton completed={m.completed} onClick={() => toggleMilestoneCompletion(m.id)}>
+                                {m.completed ? <FaUndo /> : <FaCheck />}
                                 {m.completed ? 'Mark as Incomplete' : 'Mark as Complete'}
                             </CompleteButton>
                         </MilestoneCard>
