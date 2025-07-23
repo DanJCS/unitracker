@@ -7,7 +7,6 @@ import { subDays, addDays } from 'date-fns';
 
 const AppContext = createContext();
 
-// Sensible defaults for a new user
 const defaultStartDate = subDays(new Date(), 30).toISOString();
 const defaultEndDate = addDays(new Date(), 60).toISOString();
 
@@ -30,12 +29,20 @@ export const AppProvider = ({ children }) => {
         setMilestones(milestones.map(m => m.id === id ? { ...m, completed: !m.completed } : m));
     };
 
+    const updateMilestone = (id, updatedData) => {
+        setMilestones(milestones.map(m => m.id === id ? { ...m, ...updatedData } : m));
+    };
+
     const addTask = (task) => {
         setTasks([...tasks, { ...task, id: uuidv4() }]);
     };
 
     const removeTask = (id) => {
         setTasks(tasks.filter(t => t.id !== id));
+    };
+
+    const updateTask = (id, updatedData) => {
+        setTasks(tasks.map(t => t.id === id ? { ...t, ...updatedData } : t));
     };
 
     const getTaskById = (id) => {
@@ -60,8 +67,10 @@ export const AppProvider = ({ children }) => {
         addMilestone,
         removeMilestone,
         toggleMilestoneCompletion,
+        updateMilestone, // Add to context
         addTask,
         removeTask,
+        updateTask, // Add to context
         getTaskById,
         toggleTheme,
         setSemesterDates,

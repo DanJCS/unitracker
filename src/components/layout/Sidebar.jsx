@@ -1,3 +1,5 @@
+// src/components/layout/Sidebar.jsx
+
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
@@ -31,11 +33,11 @@ const NavItem = styled(NavLink)`
     color: ${({ theme }) => theme.text};
     text-decoration: none;
     transition: all 0.2s ease;
-    
+
     &:hover {
         background: ${({ theme }) => theme.accent}10;
     }
-    
+
     &.active {
         background: ${({ theme }) => theme.accent}1A;
         color: ${({ theme }) => theme.accent};
@@ -57,6 +59,7 @@ const Label = styled.span`
     font-weight: 500;
     opacity: ${({ isCollapsed }) => isCollapsed ? 0 : 1};
     transition: opacity 0.3s ease;
+    white-space: nowrap;
 `;
 
 const Toggler = styled.button`
@@ -78,24 +81,6 @@ const Toggler = styled.button`
 
     @media (max-width: 768px) {
         display: none;
-    }
-`;
-
-const ThemeToggle = styled.button`
-    margin: auto 1rem 1rem 1rem;
-    padding: 0.75rem;
-    border: 1px solid ${({ theme }) => theme.borderColor};
-    border-radius: 4px;
-    background: transparent;
-    color: ${({ theme }) => theme.text};
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-
-    &:hover {
-        background: ${({ theme }) => theme.accent}10;
     }
 `;
 
@@ -141,7 +126,10 @@ const MobileOverlay = styled.div`
     }
 `;
 
-const Sidebar = ({ isCollapsed, setCollapsed }) => {
+// ===================================================================
+// THE FIX IS HERE: Added `onSettingsClick` to the destructured props
+// ===================================================================
+const Sidebar = ({ isCollapsed, setCollapsed, onSettingsClick }) => {
     const { theme, toggleTheme } = useAppContext();
 
     return (

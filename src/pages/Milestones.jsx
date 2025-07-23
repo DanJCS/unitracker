@@ -3,7 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import styled from 'styled-components';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { FaTrash } from 'react-icons/fa';
 
 const MilestonesContainer = styled.div`
@@ -78,22 +78,35 @@ const MilestonesList = styled.div`
     gap: 1rem;
 `;
 
+const getGlow = (daysLeft, theme) => {
+    const baseShadow = `0 2px 8px rgba(0,0,0,0.1)`;
+    if (daysLeft < 0) return baseShadow;
+    let glowColor;
+    if (daysLeft === 0) glowColor = '#ef4444';
+    else if (daysLeft === 1) glowColor = '#f97316';
+    else if (daysLeft <= 5) glowColor = '#eab308';
+    else return baseShadow;
+    return `0 0 12px 2px ${glowColor}60, ${baseShadow}`;
+};
+
 const MilestoneCard = styled.div`
-    position: relative;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: ${({ theme }) => theme.cardBg};
-    padding: 1.5rem;
-    border-radius: 12px;
+    position: relative; display: flex; justify-content: space-between; align-items: center;
+    background: ${({ theme }) => theme.cardBg}; padding: 1.5rem; border-radius: 12px;
     border-left: 5px solid ${({ completed, theme }) => (completed ? '#3B82F6' : '#EF4444')};
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    
-    @media (max-width: 768px) {
-        flex-direction: column;
-        gap: 1rem;
-        text-align: center;
-    }
+    transition: box-shadow 0.2s ease;
+    box-shadow: ${({ daysLeft, theme }) => getGlow(daysLeft, theme)};
+    @media (max-width: 768px) { flex-direction: column; gap: 1rem; text-align: center; }
+`;
+
+const CardActions = styled.div`
+    position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;
+`;
+
+const ActionButton = styled.button`
+    background: none; border: none; color: ${({ theme }) => theme.text}60;
+    cursor: pointer; font-size: 0.9rem; padding: 0.5rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
+    &:hover { background: ${({ hoverBg }) => hoverBg || '#ef44441a'}; color: ${({ hoverColor }) => hoverColor || '#ef4444'}; }
 `;
 
 const MilestoneInfo = styled.div`
@@ -143,77 +156,41 @@ const DatePickerWrapper = styled.div`
     }
 `;
 
-const RemoveButton = styled.button`
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    background: none;
-    border: none;
-    color: ${({ theme }) => theme.text}60;
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 0.5rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    &:hover {
-        color: #ef4444;
-        background: #ef44441a;
-    }
-`;
 
 const Milestones = () => {
-    const { milestones, addMilestone, toggleMilestoneCompletion, removeMilestone } = useAppContext();
+    const { milestones, addMilestone, toggleMilestoneCompletion, removeMilestone, updateMilestone } = useAppContext();
     const [name, setName] = useState('');
     const [date, setDate] = useState(new Date());
+    const [isEditModalOpen, setEditModalOpen] = useState(false);
+    const [editingMilestone, setEditingMilestone] = useState(null);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!name.trim()) return;
-        addMilestone({ name, date: date.toISOString().split('T')[0] });
-        setName('');
-    };
-
-    const handleRemoveMilestone = (e, milestoneId) => {
-        e.stopPropagation();
-        if (window.confirm("Are you sure you want to delete this milestone?")) {
-            removeMilestone(milestoneId);
-        }
-    };
+    const handleSubmit = (e) => { e.preventDefault(); if (!name.trim()) return; addMilestone({ name, date: date.toISOString().split('T')[0] }); setName(''); };
+    const handleRemoveMilestone = (e, milestoneId) => { e.stopPropagation(); if (window.confirm("Are you sure you want to delete this milestone?")) { removeMilestone(milestoneId); }};
+    const handleOpenEditModal = (e, milestone) => { e.stopPropagation(); setEditingMilestone(milestone); setEditModalOpen(true); };
+    const handleSaveMilestone = (updatedData) => { if (editingMilestone) { updateMilestone(editingMilestone.id, updatedData); } };
 
     return (
         <MilestonesContainer>
             <Title>Manage Milestones</Title>
-
             <FormContainer onSubmit={handleSubmit}>
                 <FormTitle>Add New Milestone</FormTitle>
-                <Input
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Milestone Name (e.g., Final Report Due)"
-                    required
-                />
-                <DatePickerWrapper>
-                    <DatePicker
-                        selected={date}
-                        onChange={d => setDate(d)}
-                        dateFormat="MMMM d, yyyy"
-                    />
-                </DatePickerWrapper>
+                <Input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Milestone Name (e.g., Final Report Due)" required />
+                <DatePickerWrapper><DatePicker selected={date} onChange={d => setDate(d)} dateFormat="MMMM d, yyyy" /></DatePickerWrapper>
                 <SubmitButton type="submit">Add Milestone</SubmitButton>
             </FormContainer>
-
             <MilestonesList>
-                {milestones
-                    .sort((a, b) => new Date(a.date) - new Date(b.date))
-                    .map(m => (
-                        <MilestoneCard key={m.id} completed={m.completed}>
-                            <RemoveButton onClick={(e) => handleRemoveMilestone(e, m.id)}>
-                                <FaTrash />
-                            </RemoveButton>
+                {milestones.sort((a, b) => new Date(a.date) - new Date(b.date)).map(m => {
+                    const daysLeft = differenceInDays(new Date(m.date), new Date());
+                    return (
+                        <MilestoneCard key={m.id} completed={m.completed} daysLeft={daysLeft}>
+                            <CardActions>
+                                <ActionButton onClick={(e) => handleOpenEditModal(e, m)} hoverColor="#6366f1" hoverBg="#6366f11a">
+                                    <FaPencilAlt />
+                                </ActionButton>
+                                <ActionButton onClick={(e) => handleRemoveMilestone(e, m.id)}>
+                                    <FaTrash />
+                                </ActionButton>
+                            </CardActions>
                             <MilestoneInfo>
                                 <MilestoneName>{m.name}</MilestoneName>
                                 <MilestoneDate>- {format(new Date(m.date), 'do MMMM yyyy')}</MilestoneDate>
@@ -222,8 +199,10 @@ const Milestones = () => {
                                 {m.completed ? 'Mark as Incomplete' : 'Mark as Complete'}
                             </CompleteButton>
                         </MilestoneCard>
-                    ))}
+                    )
+                })}
             </MilestonesList>
+            <EditModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} item={editingMilestone} onSave={handleSaveMilestone} />
         </MilestonesContainer>
     );
 }

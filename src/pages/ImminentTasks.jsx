@@ -95,6 +95,17 @@ const TasksList = styled.div`
     gap: 1rem;
 `;
 
+const getGlow = (daysLeft, theme) => {
+    const baseShadow = `0 4px 12px rgba(0,0,0,0.1)`;
+    if (daysLeft < 0) return baseShadow;
+    let glowColor;
+    if (daysLeft === 0) glowColor = '#ef4444';
+    else if (daysLeft === 1) glowColor = '#f97316';
+    else if (daysLeft <= 5) glowColor = '#eab308';
+    else return baseShadow;
+    return `0 0 12px 2px ${glowColor}60, ${baseShadow}`;
+};
+
 const TaskCard = styled.div`
     position: relative;
     background: ${({ theme }) => theme.cardBg};
@@ -104,31 +115,29 @@ const TaskCard = styled.div`
     cursor: pointer;
     transition: all 0.2s ease;
     text-align: center;
-    
+    box-shadow: ${({ daysLeft, theme }) => getGlow(daysLeft, theme)};
     &:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         transform: translateY(-2px);
+        box-shadow: ${({ daysLeft, theme }) => getGlow(daysLeft, theme).replace('0.1', '0.2')};
     }
 `;
 
-const RemoveButton = styled.button`
+const CardActions = styled.div`
     position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
-    background: none;
-    border: none;
-    color: ${({ theme }) => theme.text}60;
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 0.5rem;
-    border-radius: 50%;
+    top: 0.5rem;
+    right: 0.5rem;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    
+    gap: 0.25rem;
+`;
+
+const ActionButton = styled.button`
+    background: none; border: none; color: ${({ theme }) => theme.text}60;
+    cursor: pointer; font-size: 0.9rem; padding: 0.5rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease;
     &:hover {
-        color: #ef4444; // Red color on hover
-        background: #ef44441a;
+        background: ${({ hoverBg }) => hoverBg || '#ef44441a'};
+        color: ${({ hoverColor }) => hoverColor || '#ef4444'};
     }
 `;
 
@@ -160,12 +169,14 @@ const DatePickerWrapper = styled.div`
 `;
 
 const ImminentTasks = () => {
-    const { tasks, addTask, removeTask } = useAppContext();
+    const { tasks, addTask, removeTask, updateTask } = useAppContext();
     const navigate = useNavigate();
     const [name, setName] = useState('');
     const [dueDate, setDueDate] = useState(new Date());
     const [approach, setApproach] = useState('');
     const approachRef = useRef(null);
+    const [isEditModalOpen, setEditModalOpen] = useState(false);
+    const [editingTask, setEditingTask] = useState(null);
 
     const sortedTasks = useMemo(() => {
         return [...tasks].sort((a, b) =>
@@ -174,108 +185,46 @@ const ImminentTasks = () => {
         );
     }, [tasks]);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!name.trim()) return;
-        // Ensure the approach text is clean before submitting
-        const finalApproach = approach.trim() === '•' ? '' : approach;
-        addTask({ name, dueDate: dueDate.toISOString(), approach: finalApproach });
-        setName('');
-        setApproach('');
-    };
-
-    const handleTaskClick = (taskId) => {
-        // We'll keep the confirm here for navigation
-        if(window.confirm("Start this task now? This will take you to the immersive zone.")) {
-            navigate(`/immersive/${taskId}`);
-        }
-    };
-
-    const handleRemoveTask = (e, taskId) => {
-        e.stopPropagation(); // Prevents the card's navigation click
-        if (window.confirm("Are you sure you want to delete this task?")) {
-            removeTask(taskId);
-        }
-    };
-
-    // This handler will manage the bullet points
-    const handleApproachChange = (e) => {
-        let value = e.target.value;
-        // If the textarea is empty, start with a bullet point
-        if (value === '') {
-            setApproach('');
-            return;
-        }
-        if (!value.startsWith('• ')) {
-            value = '• ' + value.trimStart();
-        }
-        setApproach(value);
-    }
-
-    const handleApproachKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const { value, selectionStart } = e.target;
-
-            // Insert a newline and a bullet point at the cursor's position
-            const newValue =
-                value.substring(0, selectionStart) +
-                '\n• ' +
-                value.substring(selectionStart);
-
-            setApproach(newValue);
-
-            // Use requestAnimationFrame to set the cursor position after the re-render
-            requestAnimationFrame(() => {
-                if (approachRef.current) {
-                    const newCursorPosition = selectionStart + 3; // For '\n• '
-                    approachRef.current.selectionStart = newCursorPosition;
-                    approachRef.current.selectionEnd = newCursorPosition;
-                }
-            });
-        }
-    }
+    const handleSubmit = (e) => { e.preventDefault(); if (!name.trim()) return; const finalApproach = approach.trim() === '•' ? '' : approach; addTask({ name, dueDate: dueDate.toISOString(), approach: finalApproach }); setName(''); setApproach(''); };
+    const handleTaskClick = (taskId) => { if(window.confirm("Start this task now? This will take you to the immersive zone.")) { navigate(`/immersive/${taskId}`); } };
+    const handleRemoveTask = (e, taskId) => { e.stopPropagation(); if (window.confirm("Are you sure you want to delete this task?")) { removeTask(taskId); }};
+    const handleApproachChange = (e) => { let value = e.target.value; if (value === '') { setApproach(''); return; } if (!value.startsWith('• ')) { value = '• ' + value.trimStart(); } setApproach(value); };
+    const handleApproachKeyDown = (e) => { if (e.key === 'Enter') { e.preventDefault(); const { value, selectionStart } = e.target; const newValue = value.substring(0, selectionStart) + '\n• ' + value.substring(selectionStart); setApproach(newValue); requestAnimationFrame(() => { if (approachRef.current) { const newCursorPosition = selectionStart + 3; approachRef.current.selectionStart = newCursorPosition; approachRef.current.selectionEnd = newCursorPosition; } }); } };
+    const handleOpenEditModal = (e, task) => { e.stopPropagation(); setEditingTask(task); setEditModalOpen(true); };
+    const handleSaveTask = (updatedData) => { if (editingTask) { updateTask(editingTask.id, updatedData); } };
 
     return (
         <TasksContainer>
             <Title>Imminent Tasks</Title>
-
             <FormContainer onSubmit={handleSubmit}>
                 <FormTitle>Add New Task</FormTitle>
-                <Input
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Task Name"
-                    required
-                />
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Task Name" required />
                 <DatePickerWrapper>
-                    <DatePicker
-                        selected={dueDate}
-                        onChange={date => setDueDate(date)}
-                        dateFormat="MMMM d, yyyy"
-                    />
+                    <DatePicker selected={dueDate} onChange={date => setDueDate(date)} dateFormat="MMMM d, yyyy" />
                 </DatePickerWrapper>
-                <TextArea
-                    ref={approachRef} // Attach the ref
-                    value={approach}
-                    onChange={handleApproachChange}
-                    onKeyDown={handleApproachKeyDown} // Add the keydown handler
-                    placeholder="Method of approach (bullet points)"
-                />
+                <TextArea ref={approachRef} value={approach} onChange={handleApproachChange} onKeyDown={handleApproachKeyDown} placeholder="Method of approach (bullet points)" />
                 <SubmitButton type="submit">Add Task</SubmitButton>
             </FormContainer>
-
             <TasksList>
-                {sortedTasks.map(task => (
-                    <TaskCard key={task.id} onClick={() => handleTaskClick(task.id)}>
-                        <RemoveButton onClick={(e) => handleRemoveTask(e, task.id)}>
-                            <FaTrash />
-                        </RemoveButton>
-                        <TaskName>{task.name}</TaskName>
-                        <TaskDue>Due in: {differenceInDays(new Date(task.dueDate), new Date())} days</TaskDue>
-                    </TaskCard>
-                ))}
+                {sortedTasks.map(task => {
+                    const daysLeft = differenceInDays(new Date(task.dueDate), new Date());
+                    return (
+                        <TaskCard key={task.id} onClick={() => handleTaskClick(task.id)} daysLeft={daysLeft}>
+                            <CardActions>
+                                <ActionButton onClick={(e) => handleOpenEditModal(e, task)} hoverColor="#6366f1" hoverBg="#6366f11a">
+                                    <FaPencilAlt />
+                                </ActionButton>
+                                <ActionButton onClick={(e) => handleRemoveTask(e, task.id)}>
+                                    <FaTrash />
+                                </ActionButton>
+                            </CardActions>
+                            <TaskName>{task.name}</TaskName>
+                            <TaskDue>{daysLeft < 0 ? `Overdue by ${Math.abs(daysLeft)} days` : `Due in: ${daysLeft} days`}</TaskDue>
+                        </TaskCard>
+                    );
+                })}
             </TasksList>
+            <EditModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} item={editingTask} onSave={handleSaveTask} />
         </TasksContainer>
     );
 };
