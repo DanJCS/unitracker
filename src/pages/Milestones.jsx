@@ -6,8 +6,9 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import styled from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
-import { FaTrash, FaPencilAlt, FaCheck, FaUndo } from 'react-icons/fa'; // Added FaPencilAlt
-import EditModal from '../components/common/EditModal'; // Added EditModal import
+import { FaTrash, FaPencilAlt, FaCheck, FaUndo } from 'react-icons/fa';
+import EditModal from '../components/common/EditModal';
+import DescriptionModal from '../components/common/DescriptionModal';
 
 const MilestonesContainer = styled.div`
     width: 100%;
@@ -81,7 +82,7 @@ const MilestonesList = styled.div`
     gap: 1rem;
 `;
 
-const getGlow = (daysLeft, theme) => {
+const getGlow = (daysLeft) => {
     const baseShadow = `0 2px 8px rgba(0,0,0,0.1)`;
     if (daysLeft < 0) return baseShadow;
     let glowColor;
@@ -191,7 +192,7 @@ const TextArea = styled.textarea`
     font-size: 1rem;
     min-height: 100px;
     resize: vertical;
-    
+
     &:focus {
         outline: none;
         border-color: ${({ theme }) => theme.accent};
@@ -205,10 +206,16 @@ const Milestones = () => {
     const [description, setDescription] = useState('');
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [editingMilestone, setEditingMilestone] = useState(null);
-    const [isDescriptionModalOpen, setDescriptionModalOpen] = useState(false); // <-- STATE FOR NEW MODAL
-    const [selectedMilestone, setSelectedMilestone] = useState(null); // <-- STATE FOR NEW MODAL
+    const [isDescriptionModalOpen, setDescriptionModalOpen] = useState(false);
+    const [selectedMilestone, setSelectedMilestone] = useState(null);
 
-    const handleSubmit = (e) => { e.preventDefault(); if (!name.trim()) return; addMilestone({ name, date: date.toISOString().split('T')[0], description }); setName(''); setDescription(''); };
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        addMilestone({ name, date: date.toISOString(), description });
+        setName('');
+        setDescription('');
+    };
     const handleRemoveMilestone = (e, milestoneId) => { e.stopPropagation(); if (window.confirm("Are you sure you want to delete this milestone?")) { removeMilestone(milestoneId); }};
     const handleOpenEditModal = (e, milestone) => { e.stopPropagation(); setEditingMilestone(milestone); setEditModalOpen(true); };
     const handleSaveMilestone = (updatedData) => { if (editingMilestone) { updateMilestone(editingMilestone.id, updatedData); } };
