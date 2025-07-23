@@ -1,10 +1,13 @@
+// src/pages/Milestones.jsx
+
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import styled from 'styled-components';
 import { format, differenceInDays } from 'date-fns';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaPencilAlt } from 'react-icons/fa'; // Added FaPencilAlt
+import EditModal from '../components/common/EditModal'; // Added EditModal import
 
 const MilestonesContainer = styled.div`
     width: 100%;
@@ -133,7 +136,7 @@ const CompleteButton = styled.button`
     color: ${({ theme }) => theme.text};
     font-weight: 500;
     transition: all 0.2s ease;
-    
+
     &:hover {
         background: ${({ theme }) => theme.accent}10;
         border-color: ${({ theme }) => theme.accent};
@@ -144,7 +147,7 @@ const DatePickerWrapper = styled.div`
     .react-datepicker-wrapper {
         width: 100%;
     }
-    
+
     .react-datepicker__input-container input {
         width: 100%;
         padding: 0.75rem;
@@ -155,7 +158,6 @@ const DatePickerWrapper = styled.div`
         font-size: 1rem;
     }
 `;
-
 
 const Milestones = () => {
     const { milestones, addMilestone, toggleMilestoneCompletion, removeMilestone, updateMilestone } = useAppContext();

@@ -1,3 +1,5 @@
+// src/pages/ImminentTasks.jsx
+
 import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
@@ -5,7 +7,8 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { differenceInDays } from 'date-fns';
 import styled from 'styled-components';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaPencilAlt } from 'react-icons/fa'; // Added FaPencilAlt
+import EditModal from '../components/common/EditModal'; // Added EditModal import
 
 const TasksContainer = styled.div`
     width: 100%;
@@ -48,7 +51,7 @@ const Input = styled.input`
     background: ${({ theme }) => theme.body};
     color: ${({ theme }) => theme.text};
     font-size: 1rem;
-    
+
     &:focus {
         outline: none;
         border-color: ${({ theme }) => theme.accent};
@@ -64,7 +67,7 @@ const TextArea = styled.textarea`
     font-size: 1rem;
     min-height: 100px;
     resize: vertical;
-    
+
     &:focus {
         outline: none;
         border-color: ${({ theme }) => theme.accent};
@@ -81,7 +84,7 @@ const SubmitButton = styled.button`
     font-size: 1rem;
     cursor: pointer;
     transition: opacity 0.2s ease;
-    
+
     &:hover {
         opacity: 0.9;
     }
@@ -156,7 +159,7 @@ const DatePickerWrapper = styled.div`
     .react-datepicker-wrapper {
         width: 100%;
     }
-    
+
     .react-datepicker__input-container input {
         width: 100%;
         padding: 0.75rem;
