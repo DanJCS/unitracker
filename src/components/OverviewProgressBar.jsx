@@ -1,23 +1,28 @@
 import React from 'react';
 import styled from 'styled-components';
 import { differenceInDays, format } from 'date-fns';
-// NEW: Import icons
 import { FaCheck, FaHourglassHalf } from 'react-icons/fa';
+
+const Container = styled.div`
+    margin-top: 3rem;
+    padding: 0 1rem;
+`;
 
 const BarContainer = styled.div`
     position: relative;
     width: 100%;
-    height: 25px;
-    background: #E0E0E0;
-    border-radius: 15px;
-    margin-top: 4rem; /* More space for labels */
+    height: 20px;
+    background: ${({ theme }) => theme.cardBg};
+    border-radius: 10px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
 const ProgressFill = styled.div`
     height: 100%;
     width: ${({ progress }) => progress}%;
-    background: #4CAF50; /* Green */
-    border-radius: 15px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 10px;
+    transition: width 0.5s ease;
 `;
 
 const MilestoneWrapper = styled.div`
@@ -28,42 +33,50 @@ const MilestoneWrapper = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+    z-index: 10;
 `;
 
-// NEW: Label for the milestone
 const MilestoneLabel = styled.span`
-  position: absolute;
-  bottom: 28px; /* Position above the marker */
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: ${({ theme }) => theme.text};
-  background: ${({ theme }) => theme.body}E6; /* Slightly transparent body background */
-  padding: 2px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
+    position: absolute;
+    bottom: 28px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: ${({ theme }) => theme.text};
+    background: ${({ theme }) => theme.cardBg};
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transform: translateX(-50%);
+    left: 50%;
+    border: 1px solid ${({ theme }) => theme.borderColor};
 `;
 
-// UPDATED: Milestone Marker styles
 const MilestoneMarker = styled.div`
-  width: 28px;
-  height: 28px;
-  /* UPDATED: Blue for complete, Red for incomplete */
-  background: ${({ completed }) => (completed ? '#3B82F6' : '#EF4444')};
+  width: 24px;
+  height: 24px;
+  background: ${({ completed, theme }) => (completed ? '#22c55e' : '#f97316')};
   border-radius: 50%;
   border: 2px solid white;
-  z-index: 10;
-  cursor: pointer;
-  
-  /* NEW: Center the icon inside */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  font-size: 0.7rem;
+  z-index: 20;
+`;
+
+const DatesContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
   font-size: 0.9rem;
+  color: ${({ theme }) => theme.text};
+  opacity: 0.8;
 `;
 
 const OverviewProgressBar = ({ startDate, endDate, milestones }) => {
-    // ... (calculations remain the same)
     const today = new Date();
     const totalDays = differenceInDays(endDate, startDate);
     const elapsedDays = differenceInDays(today, startDate);
@@ -75,22 +88,27 @@ const OverviewProgressBar = ({ startDate, endDate, milestones }) => {
     };
 
     return (
-        <BarContainer>
-            <ProgressFill progress={progress} />
-            {milestones.map(m => (
-                <MilestoneWrapper
-                    key={m.id}
-                    position={getMilestonePosition(m.date)}
-                    title={`${m.name} - ${format(new Date(m.date), 'do MMM')}`}
-                >
-                    <MilestoneLabel>{m.name}</MilestoneLabel>
-                    <MilestoneMarker completed={m.completed}>
-                        {/* UPDATED: Render icon based on completion status */}
-                        {m.completed ? <FaCheck /> : <FaHourglassHalf />}
-                    </MilestoneMarker>
-                </MilestoneWrapper>
-            ))}
-        </BarContainer>
+        <Container>
+            <BarContainer>
+                <ProgressFill progress={progress} />
+                {milestones.map(m => (
+                    <MilestoneWrapper
+                        key={m.id}
+                        position={getMilestonePosition(m.date)}
+                        title={`${m.name} - ${format(new Date(m.date), 'do MMM')}`}
+                    >
+                        <MilestoneLabel>{m.name}</MilestoneLabel>
+                        <MilestoneMarker completed={m.completed}>
+                            {m.completed ? <FaCheck /> : <FaHourglassHalf />}
+                        </MilestoneMarker>
+                    </MilestoneWrapper>
+                ))}
+            </BarContainer>
+            <DatesContainer>
+                <span>{format(startDate, 'MMM d, yyyy')}</span>
+                <span>{format(endDate, 'MMM d, yyyy')}</span>
+            </DatesContainer>
+        </Container>
     );
 };
 

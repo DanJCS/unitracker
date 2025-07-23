@@ -1,23 +1,23 @@
 export const lightTheme = {
-    body: '#F4F7F6',
-    text: '#333',
-    sidebarBg: '#FFFFFF',
-    accent: '#5B21B6', // A nice purple
-    cardBg: '#FFFFFF',
-    borderColor: '#EAEAEA',
+    body: '#f8fafc',
+    text: '#1e293b',
+    sidebarBg: '#ffffff',
+    accent: '#6366f1',
+    cardBg: '#ffffff',
+    borderColor: '#e2e8f0',
 };
 
 export const darkTheme = {
-    body: '#121212',
-    text: '#EAEAEA',
-    sidebarBg: '#1E1E1E',
-    accent: '#A78BFA',
-    cardBg: '#2A2A2A',
-    borderColor: '#3A3A3A',
+    body: '#0f172a',
+    text: '#f1f5f9',
+    sidebarBg: '#1e293b',
+    accent: '#818cf8',
+    cardBg: '#1e293b',
+    borderColor: '#334155',
 };
 
 export const immersiveTheme = {
-    body: '#1A1A2E', // Dark grey with purple hint
-    text: '#EAEAEA',
-    accent: '#FFFFFF',
+    body: '#0f172a',
+    text: '#e2e8f0',
+    accent: '#818cf8',
 };
