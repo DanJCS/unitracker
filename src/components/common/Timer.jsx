@@ -32,10 +32,7 @@ const ControlButton = styled.button`
 const Timer = ({ onSessionEnd }) => {
     const [seconds, setSeconds] = useState(0);
     const [status, setStatus] = useState('idle'); // 'idle', 'running', 'paused'
-
-    // Use a ref to hold the interval ID.
-    const intervalRef = useRef(null);
-    // Use a ref to hold the current seconds value to avoid stale closures in the unmount cleanup.
+    const workerRef = useRef(null);
     const secondsRef = useRef(seconds);
 
     // This effect keeps the ref in sync with the state. It runs after every render.
@@ -43,32 +40,60 @@ const Timer = ({ onSessionEnd }) => {
         secondsRef.current = seconds;
     }, [seconds]);
 
-    // This effect manages the setInterval based on the timer's status.
+    // Initialize the worker
     useEffect(() => {
-        if (status === 'running') {
-            intervalRef.current = setInterval(() => {
-                setSeconds(s => s + 1);
-            }, 1000);
-        } else {
-            clearInterval(intervalRef.current);
-        }
+        // Create a new worker
+        workerRef.current = new Worker(new URL('../workers/timerWorker.js', import.meta.url));
+        
+        // Set up message handler
+        const handleMessage = (e) => {
+            const { seconds } = e.data;
+            setSeconds(seconds);
+        };
+        
+        workerRef.current.addEventListener('message', handleMessage);
+        
+        // Clean up on unmount
+        return () => {
+            workerRef.current.removeEventListener('message', handleMessage);
+            workerRef.current.terminate();
+        };
+    }, []);
 
-        // Cleanup the interval when the effect re-runs or the component unmounts.
-        return () => clearInterval(intervalRef.current);
-    }, [status]); // Only depends on 'status'.
+    // This effect handles controlling the worker based on the timer's status.
+    useEffect(() => {
+        if (!workerRef.current) return;
+        
+        if (status === 'running') {
+            workerRef.current.postMessage({ 
+                command: 'start', 
+                seconds: secondsRef.current 
+            });
+        } else {
+            workerRef.current.postMessage({ command: 'pause' });
+        }
+    }, [status]);
 
     // This effect handles logging the time ONLY when the component unmounts.
     useEffect(() => {
         // The return function is the cleanup function.
         return () => {
-            // Read the latest value from the ref.
-            if (secondsRef.current > 0) {
-                onSessionEnd(secondsRef.current);
+            // Get the latest seconds from the worker before unmounting
+            if (workerRef.current) {
+                workerRef.current.postMessage({ command: 'getSeconds' });
+                
+                // Set up a one-time message handler to get the current seconds
+                const handleFinalSeconds = (e) => {
+                    if (e.data.seconds > 0) {
+                        onSessionEnd(e.data.seconds);
+                    }
+                    workerRef.current.removeEventListener('message', handleFinalSeconds);
+                };
+                
+                workerRef.current.addEventListener('message', handleFinalSeconds);
             }
         };
-        // The empty dependency array [] is CRITICAL.
-        // It ensures this effect runs only on mount, and its cleanup runs only on unmount.
-    }, [onSessionEnd]); // Added onSessionEnd to dependencies to ensure it's not stale
+    }, [onSessionEnd]);
 
     const handleToggle = () => {
         if (status === 'idle' || status === 'paused') {
