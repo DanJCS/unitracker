@@ -42,22 +42,35 @@ const Timer = ({ onSessionEnd }) => {
 
     // Initialize the worker
     useEffect(() => {
-        // Create a new worker
-        workerRef.current = new Worker(new URL('../workers/timerWorker.js', import.meta.url));
-        
-        // Set up message handler
-        const handleMessage = (e) => {
-            const { seconds } = e.data;
-            setSeconds(seconds);
-        };
-        
-        workerRef.current.addEventListener('message', handleMessage);
-        
-        // Clean up on unmount
-        return () => {
-            workerRef.current.removeEventListener('message', handleMessage);
-            workerRef.current.terminate();
-        };
+        try {
+            // Create a new worker
+            workerRef.current = new Worker(new URL('../../workers/timerWorker.js', import.meta.url));
+            
+            // Set up message handler
+            const handleMessage = (e) => {
+                const { seconds } = e.data;
+                setSeconds(seconds);
+            };
+            
+            // Set up error handler
+            const handleError = (error) => {
+                console.error('Timer worker error:', error);
+            };
+            
+            workerRef.current.addEventListener('message', handleMessage);
+            workerRef.current.addEventListener('error', handleError);
+            
+            // Clean up on unmount
+            return () => {
+                if (workerRef.current) {
+                    workerRef.current.removeEventListener('message', handleMessage);
+                    workerRef.current.removeEventListener('error', handleError);
+                    workerRef.current.terminate();
+                }
+            };
+        } catch (error) {
+            console.error('Failed to initialize timer worker:', error);
+        }
     }, []);
 
     // This effect handles controlling the worker based on the timer's status.

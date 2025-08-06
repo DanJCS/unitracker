@@ -96,7 +96,7 @@ const getGlow = (daysLeft) => {
 const MilestoneCard = styled.div`
     position: relative; display: flex; justify-content: space-between; align-items: center;
     background: ${({ theme }) => theme.cardBg}; padding: 1.5rem; border-radius: 12px;
-    border-left: 5px solid ${({ completed, theme }) => (completed ? '#22c55e' : '#EF4444')};
+    border-left: 5px solid ${({ completed }) => (completed ? '#22c55e' : '#EF4444')};
     transition: all 0.2s ease;
     box-shadow: ${({ daysLeft }) => getGlow(daysLeft)};
     min-height: 100px;
