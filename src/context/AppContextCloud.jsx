@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { generateClient } from 'aws-amplify/data';
 import { subDays, addDays } from 'date-fns';
+import useHybridPersistence from '../hooks/useHybridPersistence';
 
 const AppContext = createContext();
 
@@ -8,25 +9,81 @@ const defaultStartDate = subDays(new Date(), 30).toISOString();
 const defaultEndDate = addDays(new Date(), 60).toISOString();
 
 export const AppProvider = ({ children, user }) => {
-    const [milestones, setMilestones] = useState([]);
-    const [tasks, setTasks] = useState([]);
-    const [theme, setTheme] = useState('light');
-    const [semesterStart, setSemesterStart] = useState(defaultStartDate);
-    const [semesterEnd, setSemesterEnd] = useState(defaultEndDate);
     const [userSettings, setUserSettings] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [client, setClient] = useState(null);
+    const [connectionError, setConnectionError] = useState(null);
 
     console.log('✅ Using cloud-first context for user:', user?.username || user?.email);
+
+    // Cloud operations for hybrid persistence
+    const tasksCloudOps = {
+        load: async () => {
+            if (!client) return null;
+            const result = await client.models.Task.list();
+            return result.data || [];
+        },
+        save: async (tasks) => {
+            // Note: Individual task updates handled by CRUD operations
+            return tasks;
+        }
+    };
+
+    const milestonesCloudOps = {
+        load: async () => {
+            if (!client) return null;
+            const result = await client.models.Milestone.list();
+            return result.data || [];
+        },
+        save: async (milestones) => {
+            // Note: Individual milestone updates handled by CRUD operations
+            return milestones;
+        }
+    };
+
+    const settingsCloudOps = {
+        load: async () => {
+            if (!client) return null;
+            const result = await client.models.UserSettings.list();
+            return result.data?.[0] || null;
+        },
+        save: async (settings) => {
+            if (!client || !settings) return null;
+            if (settings.id) {
+                const result = await client.models.UserSettings.update(settings);
+                return result.data;
+            } else {
+                const result = await client.models.UserSettings.create(settings);
+                return result.data;
+            }
+        }
+    };
+
+    // Hybrid persistence hooks
+    const { data: tasks, updateData: updateTasksData, syncStatus: tasksSyncStatus } = 
+        useHybridPersistence('tasks', [], tasksCloudOps);
+    
+    const { data: milestones, updateData: updateMilestonesData, syncStatus: milestonesSyncStatus } = 
+        useHybridPersistence('milestones', [], milestonesCloudOps);
+    
+    const { data: localSettings, updateData: updateSettingsData, syncStatus: settingsSyncStatus } = 
+        useHybridPersistence('settings', { theme: 'light', semesterStart: defaultStartDate, semesterEnd: defaultEndDate }, settingsCloudOps);
+
+    // Extract theme and dates from settings
+    const theme = localSettings?.theme || 'light';
+    const semesterStart = localSettings?.semesterStart || defaultStartDate;
+    const semesterEnd = localSettings?.semesterEnd || defaultEndDate;
 
     // Initialize GraphQL client
     useEffect(() => {
         try {
             const graphqlClient = generateClient();
             setClient(graphqlClient);
+            setConnectionError(null);
             console.log('✅ GraphQL client initialized');
         } catch (error) {
             console.error('❌ Failed to initialize GraphQL client:', error);
+            setConnectionError(error.message);
             setIsLoading(false);
         }
     }, []);
@@ -34,78 +91,35 @@ export const AppProvider = ({ children, user }) => {
     // Load user data when client and user are ready
     useEffect(() => {
         if (client && user) {
-            loadUserData();
+            setIsLoading(false); // Let hybrid persistence handle loading
+            console.log('✅ Client ready, hybrid persistence will handle data loading');
         }
-    }, [client, user]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const loadUserData = async () => {
-        try {
-            setIsLoading(true);
-            console.log('🔄 Loading user data from cloud...');
-            
-            // Load all user data from AWS
-            const [tasksResult, milestonesResult, settingsResult] = await Promise.all([
-                client.models.Task.list(),
-                client.models.Milestone.list(),
-                client.models.UserSettings.list()
-            ]);
-
-            console.log('📊 Loaded data:', {
-                tasks: tasksResult.data?.length || 0,
-                milestones: milestonesResult.data?.length || 0,
-                settings: settingsResult.data?.length || 0
-            });
-
-            setTasks(tasksResult.data || []);
-            setMilestones(milestonesResult.data || []);
-            
-            if (settingsResult.data && settingsResult.data.length > 0) {
-                const settings = settingsResult.data[0];
-                setUserSettings(settings);
-                setTheme(settings.theme || 'light');
-                setSemesterStart(settings.semesterStart || defaultStartDate);
-                setSemesterEnd(settings.semesterEnd || defaultEndDate);
-                console.log('⚙️ User settings loaded');
-            } else {
-                console.log('🆕 New user - creating default settings');
-                await createDefaultSettings();
-            }
-        } catch (error) {
-            console.error('❌ Error loading user data:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const createDefaultSettings = async () => {
-        try {
-            if (!client) return;
-            
-            const settings = await client.models.UserSettings.create({
-                theme: 'light',
-                semesterStart: defaultStartDate,
-                semesterEnd: defaultEndDate,
-            });
-            setUserSettings(settings.data);
-            console.log('✅ Default settings created');
-        } catch (error) {
-            console.error('❌ Error creating default settings:', error);
-        }
-    };
+    }, [client, user]);
 
     // === MILESTONE FUNCTIONS ===
     const addMilestone = async (milestone) => {
         try {
-            if (!client) return;
-            const newMilestone = await client.models.Milestone.create({
-                name: milestone.name,
-                date: milestone.date,
-                description: milestone.description || '',
+            const newMilestone = {
+                ...milestone,
+                id: crypto.randomUUID(),
                 completed: false,
-                color: milestone.color || '#6366f1',
-            });
-            setMilestones(prev => [...prev, newMilestone.data]);
-            console.log('✅ Milestone added:', newMilestone.data.name);
+                description: milestone.description || ''
+            };
+
+            // Update local state immediately
+            const updatedMilestones = [...milestones, newMilestone];
+            await updateMilestonesData(updatedMilestones);
+
+            // Sync to cloud if available
+            if (client) {
+                try {
+                    await client.models.Milestone.create(newMilestone);
+                    console.log('✅ Milestone synced to cloud:', newMilestone.name);
+                } catch (cloudError) {
+                    console.warn('❌ Cloud sync failed for milestone:', cloudError);
+                    // Local data is still saved
+                }
+            }
         } catch (error) {
             console.error('❌ Error adding milestone:', error);
         }
@@ -241,42 +255,17 @@ export const AppProvider = ({ children, user }) => {
     // === SETTINGS FUNCTIONS ===
     const toggleTheme = async () => {
         const newTheme = theme === 'light' ? 'dark' : 'light';
-        setTheme(newTheme);
-        
-        if (userSettings && client) {
-            try {
-                const updated = await client.models.UserSettings.update({
-                    id: userSettings.id,
-                    theme: newTheme,
-                });
-                setUserSettings(updated.data);
-                console.log('🎨 Theme updated:', newTheme);
-            } catch (error) {
-                console.error('❌ Error updating theme:', error);
-            }
-        }
+        const updatedSettings = { ...localSettings, theme: newTheme };
+        await updateSettingsData(updatedSettings);
+        console.log('🎨 Theme updated:', newTheme);
     };
 
     const setSemesterDates = async (start, end) => {
         const startISO = start.toISOString();
         const endISO = end.toISOString();
-        
-        setSemesterStart(startISO);
-        setSemesterEnd(endISO);
-        
-        if (userSettings && client) {
-            try {
-                const updated = await client.models.UserSettings.update({
-                    id: userSettings.id,
-                    semesterStart: startISO,
-                    semesterEnd: endISO,
-                });
-                setUserSettings(updated.data);
-                console.log('📅 Timeline dates updated');
-            } catch (error) {
-                console.error('❌ Error updating timeline dates:', error);
-            }
-        }
+        const updatedSettings = { ...localSettings, semesterStart: startISO, semesterEnd: endISO };
+        await updateSettingsData(updatedSettings);
+        console.log('📅 Timeline dates updated');
     };
 
     const value = {
@@ -287,6 +276,13 @@ export const AppProvider = ({ children, user }) => {
         addTask, removeTask, updateTask, getTaskById, getMilestoneById, getTasksByMilestone,
         logTimeForTask, toggleTaskCompletion,
         toggleTheme, setSemesterDates,
+        // Sync status for UI feedback
+        syncStatus: {
+            tasks: tasksSyncStatus,
+            milestones: milestonesSyncStatus,
+            settings: settingsSyncStatus
+        },
+        connectionError
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
