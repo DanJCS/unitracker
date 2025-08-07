@@ -114,7 +114,12 @@ export const AppProvider = ({ children, user }) => {
 
     const removeMilestone = async (id) => {
         try {
-            await client.models.Milestone.delete({ id });
+            const graphqlClient = getClient();
+            if (!graphqlClient) {
+                console.warn('GraphQL client not available for milestone removal');
+                return;
+            }
+            await graphqlClient.models.Milestone.delete({ id });
             setMilestones(prev => prev.filter(m => m.id !== id));
         } catch (error) {
             console.error('Error removing milestone:', error);
@@ -123,8 +128,13 @@ export const AppProvider = ({ children, user }) => {
 
     const toggleMilestoneCompletion = async (id) => {
         try {
+            const graphqlClient = getClient();
+            if (!graphqlClient) {
+                console.warn('GraphQL client not available for milestone toggle');
+                return;
+            }
             const milestone = milestones.find(m => m.id === id);
-            const updated = await client.models.Milestone.update({
+            const updated = await graphqlClient.models.Milestone.update({
                 id,
                 completed: !milestone.completed,
             });
@@ -136,7 +146,12 @@ export const AppProvider = ({ children, user }) => {
 
     const updateMilestone = async (id, updatedData) => {
         try {
-            const updated = await client.models.Milestone.update({
+            const graphqlClient = getClient();
+            if (!graphqlClient) {
+                console.warn('GraphQL client not available for milestone update');
+                return;
+            }
+            const updated = await graphqlClient.models.Milestone.update({
                 id,
                 ...updatedData,
             });
@@ -148,7 +163,12 @@ export const AppProvider = ({ children, user }) => {
 
     const addTask = async (task) => {
         try {
-            const newTask = await client.models.Task.create({
+            const graphqlClient = getClient();
+            if (!graphqlClient) {
+                console.warn('GraphQL client not available for task creation');
+                return;
+            }
+            const newTask = await graphqlClient.models.Task.create({
                 name: task.name,
                 description: task.description,
                 dueDate: task.dueDate,
@@ -164,7 +184,12 @@ export const AppProvider = ({ children, user }) => {
 
     const removeTask = async (id) => {
         try {
-            await client.models.Task.delete({ id });
+            const graphqlClient = getClient();
+            if (!graphqlClient) {
+                console.warn('GraphQL client not available for task removal');
+                return;
+            }
+            await graphqlClient.models.Task.delete({ id });
             setTasks(prev => prev.filter(t => t.id !== id));
         } catch (error) {
             console.error('Error removing task:', error);
@@ -173,7 +198,12 @@ export const AppProvider = ({ children, user }) => {
 
     const updateTask = async (id, updatedData) => {
         try {
-            const updated = await client.models.Task.update({
+            const graphqlClient = getClient();
+            if (!graphqlClient) {
+                console.warn('GraphQL client not available for task update');
+                return;
+            }
+            const updated = await graphqlClient.models.Task.update({
                 id,
                 ...updatedData,
             });
@@ -189,8 +219,13 @@ export const AppProvider = ({ children, user }) => {
 
     const logTimeForTask = async (id, seconds) => {
         try {
+            const graphqlClient = getClient();
+            if (!graphqlClient) {
+                console.warn('GraphQL client not available for time logging');
+                return;
+            }
             const task = tasks.find(t => t.id === id);
-            const updated = await client.models.Task.update({
+            const updated = await graphqlClient.models.Task.update({
                 id,
                 timeSpent: (task.timeSpent || 0) + seconds,
             });
@@ -202,8 +237,13 @@ export const AppProvider = ({ children, user }) => {
 
     const toggleTaskCompletion = async (id) => {
         try {
+            const graphqlClient = getClient();
+            if (!graphqlClient) {
+                console.warn('GraphQL client not available for task toggle');
+                return;
+            }
             const task = tasks.find(t => t.id === id);
-            const updated = await client.models.Task.update({
+            const updated = await graphqlClient.models.Task.update({
                 id,
                 completed: !task.completed,
             });
@@ -219,7 +259,12 @@ export const AppProvider = ({ children, user }) => {
         
         if (userSettings) {
             try {
-                const updated = await client.models.UserSettings.update({
+                const graphqlClient = getClient();
+                if (!graphqlClient) {
+                    console.warn('GraphQL client not available for theme update');
+                    return;
+                }
+                const updated = await graphqlClient.models.UserSettings.update({
                     id: userSettings.id,
                     theme: newTheme,
                 });
@@ -239,7 +284,12 @@ export const AppProvider = ({ children, user }) => {
         
         if (userSettings) {
             try {
-                const updated = await client.models.UserSettings.update({
+                const graphqlClient = getClient();
+                if (!graphqlClient) {
+                    console.warn('GraphQL client not available for semester dates update');
+                    return;
+                }
+                const updated = await graphqlClient.models.UserSettings.update({
                     id: userSettings.id,
                     semesterStart: startISO,
                     semesterEnd: endISO,
