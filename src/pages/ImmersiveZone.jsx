@@ -3,7 +3,7 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
-import { useAppContext } from '../context/AppContextCloud';
+import { useAppContext } from '../context/AppContextAmplify';
 import BeatingCircle from '../components/common/BeatingCircle';
 import Timer from '../components/common/Timer';
 

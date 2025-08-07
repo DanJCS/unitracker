@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useAppContext } from '../context/AppContextCloud';
+import { useAppContext } from '../context/AppContextAmplify';
 import OverviewProgressBar from '../components/OverviewProgressBar';
-import { differenceInDays, format, isToday } from 'date-fns';
+import { differenceInDays, isToday } from 'date-fns';
 
 const OverviewContainer = styled.div`
     width: 100%;

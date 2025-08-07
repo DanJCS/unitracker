@@ -3,7 +3,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
-import { useAppContext } from '../../context/AppContextCloud';
+import { useAppContext } from '../../context/AppContextAmplify';
 import { signOut } from 'aws-amplify/auth';
 import { FaHome, FaTasks, FaFlag, FaMoon, FaSun, FaChevronLeft, FaChevronRight, FaCog, FaSignOutAlt } from 'react-icons/fa';
 

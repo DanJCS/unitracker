@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { useAppContext } from '../../context/AppContextCloud';
+import { useAppContext } from '../../context/AppContextAmplify';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
