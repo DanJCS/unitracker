@@ -127,10 +127,20 @@ export const AppProvider = ({ children, user }) => {
 
     const removeMilestone = async (id) => {
         try {
-            if (!client) return;
-            await client.models.Milestone.delete({ id });
-            setMilestones(prev => prev.filter(m => m.id !== id));
-            console.log('🗑️ Milestone deleted');
+            // Update local state immediately
+            const updatedMilestones = milestones.filter(m => m.id !== id);
+            await updateMilestonesData(updatedMilestones);
+
+            // Sync to cloud if available
+            if (client) {
+                try {
+                    await client.models.Milestone.delete({ id });
+                    console.log('🗑️ Milestone deleted from cloud');
+                } catch (cloudError) {
+                    console.warn('❌ Cloud sync failed for milestone deletion:', cloudError);
+                    // Local data is still updated
+                }
+            }
         } catch (error) {
             console.error('❌ Error removing milestone:', error);
         }
@@ -138,14 +148,26 @@ export const AppProvider = ({ children, user }) => {
 
     const toggleMilestoneCompletion = async (id) => {
         try {
-            if (!client) return;
             const milestone = milestones.find(m => m.id === id);
-            const updated = await client.models.Milestone.update({
-                id,
-                completed: !milestone.completed,
-            });
-            setMilestones(prev => prev.map(m => m.id === id ? updated.data : m));
-            console.log('✅ Milestone toggled:', updated.data.completed);
+            const updatedMilestone = { ...milestone, completed: !milestone.completed };
+            
+            // Update local state immediately
+            const updatedMilestones = milestones.map(m => m.id === id ? updatedMilestone : m);
+            await updateMilestonesData(updatedMilestones);
+
+            // Sync to cloud if available
+            if (client) {
+                try {
+                    await client.models.Milestone.update({
+                        id,
+                        completed: !milestone.completed,
+                    });
+                    console.log('✅ Milestone toggled in cloud:', !milestone.completed);
+                } catch (cloudError) {
+                    console.warn('❌ Cloud sync failed for milestone toggle:', cloudError);
+                    // Local data is still updated
+                }
+            }
         } catch (error) {
             console.error('❌ Error toggling milestone completion:', error);
         }
@@ -168,18 +190,28 @@ export const AppProvider = ({ children, user }) => {
     // === TASK FUNCTIONS ===
     const addTask = async (task) => {
         try {
-            if (!client) return;
-            const newTask = await client.models.Task.create({
-                name: task.name,
-                description: task.description,
-                dueDate: task.dueDate,
-                priority: task.priority,
+            const newTask = {
+                ...task,
+                id: crypto.randomUUID(),
                 timeSpent: 0,
                 completed: false,
                 milestoneId: task.milestoneId || null,
-            });
-            setTasks(prev => [...prev, newTask.data]);
-            console.log('✅ Task added:', newTask.data.name);
+            };
+
+            // Update local state immediately
+            const updatedTasks = [...tasks, newTask];
+            await updateTasksData(updatedTasks);
+
+            // Sync to cloud if available
+            if (client) {
+                try {
+                    await client.models.Task.create(newTask);
+                    console.log('✅ Task synced to cloud:', newTask.name);
+                } catch (cloudError) {
+                    console.warn('❌ Cloud sync failed for task:', cloudError);
+                    // Local data is still saved
+                }
+            }
         } catch (error) {
             console.error('❌ Error adding task:', error);
         }
