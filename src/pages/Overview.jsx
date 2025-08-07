@@ -1,8 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useAppContext } from '../context/AppContextFallback';
+import { useAppContext } from '../context/AppContextCloud';
 import OverviewProgressBar from '../components/OverviewProgressBar';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, format, isToday } from 'date-fns';
 
 const OverviewContainer = styled.div`
     width: 100%;
@@ -70,10 +70,79 @@ const ProgressContainer = styled.div`
     margin-top: 1rem;
 `;
 
+const TodayTasksSection = styled.div`
+    width: 100%;
+    max-width: 600px;
+    margin-top: 2rem;
+`;
+
+const SectionTitle = styled.h2`
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: ${({ theme }) => theme.text};
+    text-align: left;
+`;
+
+const TasksList = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+`;
+
+const TaskItem = styled.div`
+    background: ${({ theme }) => theme.cardBg};
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid ${({ color, theme }) => color || theme.accent};
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+`;
+
+const TaskInfo = styled.div`
+    flex: 1;
+`;
+
+const TaskName = styled.h3`
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    color: ${({ theme }) => theme.text};
+`;
+
+const TaskMeta = styled.p`
+    margin: 0;
+    font-size: 0.85rem;
+    color: ${({ theme }) => theme.text}80;
+    display: flex;
+    align-items: center;
+`;
+
+const MilestoneIndicator = styled.div`
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: ${({ color }) => color};
+    margin-right: 0.5rem;
+`;
+
+const NoTasksMessage = styled.div`
+    text-align: center;
+    padding: 2rem;
+    color: ${({ theme }) => theme.text}60;
+    font-style: italic;
+`;
+
 const Overview = () => {
     // Get everything from context now
-    const { milestones, semesterStart, semesterEnd } = useAppContext();
+    const { milestones, semesterStart, semesterEnd, tasks, getMilestoneById } = useAppContext();
     const today = new Date();
+
+    // Filter tasks due today
+    const todayTasks = tasks.filter(task => 
+        !task.completed && isToday(new Date(task.dueDate))
+    );
 
     const totalDays = differenceInDays(semesterEnd, semesterStart);
     const elapsedDays = differenceInDays(today, semesterStart);
@@ -82,11 +151,11 @@ const Overview = () => {
 
     return (
         <OverviewContainer>
-            <Title>Semester Overview</Title>
+            <Title>Timeline Overview</Title>
             <StatsContainer>
                 <StatBox>
                     <StatValue>{Math.round(percentComplete)}%</StatValue>
-                    <StatLabel>Semester Completed</StatLabel>
+                    <StatLabel>Timeline Completed</StatLabel>
                 </StatBox>
                 <StatBox>
                     <StatValue>{daysLeft}</StatValue>
@@ -100,6 +169,33 @@ const Overview = () => {
                     milestones={milestones}
                 />
             </ProgressContainer>
+            <TodayTasksSection>
+                <SectionTitle>Today's Tasks ({todayTasks.length})</SectionTitle>
+                {todayTasks.length > 0 ? (
+                    <TasksList>
+                        {todayTasks.map(task => {
+                            const milestone = task.milestoneId ? getMilestoneById(task.milestoneId) : null;
+                            return (
+                                <TaskItem key={task.id} color={milestone?.color}>
+                                    <TaskInfo>
+                                        <TaskName>{task.name}</TaskName>
+                                        <TaskMeta>
+                                            {milestone && (
+                                                <>
+                                                    <MilestoneIndicator color={milestone.color} />
+                                                    {milestone.name}
+                                                </>
+                                            )}
+                                        </TaskMeta>
+                                    </TaskInfo>
+                                </TaskItem>
+                            );
+                        })}
+                    </TasksList>
+                ) : (
+                    <NoTasksMessage>No tasks due today! 🎉</NoTasksMessage>
+                )}
+            </TodayTasksSection>
         </OverviewContainer>
     );
 };

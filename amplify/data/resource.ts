@@ -9,6 +9,7 @@ const schema = a.schema({
       priority: a.enum(['high', 'medium', 'low']),
       timeSpent: a.integer().default(0),
       completed: a.boolean().default(false),
+      milestoneId: a.string(), // Optional relationship to milestone
       owner: a.string(), // Will be populated by auth rule
     })
     .authorization((allow) => [allow.owner()]),
@@ -19,6 +20,7 @@ const schema = a.schema({
       date: a.datetime().required(),
       description: a.string(),
       completed: a.boolean().default(false),
+      color: a.string().default('#6366f1'), // User-selectable color
       owner: a.string(), // Will be populated by auth rule
     })
     .authorization((allow) => [allow.owner()]),

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '../context/AppContextFallback';
+import { useAppContext } from '../context/AppContextCloud';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { differenceInDays } from 'date-fns';
@@ -10,6 +10,7 @@ import styled from 'styled-components';
 import { FaTrash, FaPencilAlt, FaCheckCircle } from 'react-icons/fa'; // <--- FIX: Added FaCheckCircle
 import EditModal from '../components/common/EditModal';
 import CompletedTasksModal from '../components/common/CompletedTasksModal'; // <--- FIX: Added import
+import FollowUpTaskModal from '../components/common/FollowUpTaskModal';
 import { formatTimeSpent } from '../utils/timeFormatter'; // <--- FIX: Added import
 
 const TasksContainer = styled.div`
@@ -54,6 +55,21 @@ const Input = styled.input`
         border-color: ${({ theme }) => theme.accent};
     }
 `;
+
+const Select = styled.select`
+    padding: 0.75rem;
+    border: 1px solid ${({ theme }) => theme.borderColor};
+    border-radius: 8px;
+    background: ${({ theme }) => theme.body};
+    color: ${({ theme }) => theme.text};
+    font-size: 1rem;
+    cursor: pointer;
+    &:focus {
+        outline: none;
+        border-color: ${({ theme }) => theme.accent};
+    }
+`;
+
 const TextArea = styled.textarea`
     padding: 0.75rem;
     border: 1px solid ${({ theme }) => theme.borderColor};
@@ -144,16 +160,37 @@ const TaskName = styled.h3` margin: 0 0 0.25rem 0; color: ${({ theme }) => theme
 const TaskDue = styled.p` margin: 0; color: ${({ theme }) => theme.text}99; font-weight: 500; font-size: 0.9rem; `;
 const TimeSpentDisplay = styled(TaskDue)` font-style: italic; margin-top: 0.5rem; `; // <--- FIX: Added definition
 
+const MilestoneIndicator = styled.div`
+    display: inline-block;
+    background-color: ${({ color }) => color || 'transparent'};
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    border: 2px solid ${({ color }) => color || 'transparent'};
+`;
+
+const TaskMilestone = styled.div`
+    display: flex;
+    align-items: center;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: ${({ theme }) => theme.text}80;
+`;
+
 const ImminentTasks = () => {
-    const { tasks, addTask, removeTask, updateTask, toggleTaskCompletion } = useAppContext();
+    const { tasks, milestones, addTask, removeTask, updateTask, toggleTaskCompletion, getMilestoneById } = useAppContext();
     const navigate = useNavigate();
     const [name, setName] = useState('');
     const [dueDate, setDueDate] = useState(new Date());
     const [approach, setApproach] = useState('');
+    const [selectedMilestoneId, setSelectedMilestoneId] = useState('');
     const approachRef = useRef(null);
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     const [isCompletedModalOpen, setCompletedModalOpen] = useState(false);
+    const [isFollowUpModalOpen, setFollowUpModalOpen] = useState(false);
+    const [completedTask, setCompletedTask] = useState(null);
 
     const { incompleteTasks, completedTasks } = useMemo(() => {
         const incomplete = tasks.filter(t => !t.completed).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
@@ -161,12 +198,21 @@ const ImminentTasks = () => {
         return { incompleteTasks: incomplete, completedTasks: complete };
     }, [tasks]);
 
-    const handleSubmit = (e) => { e.preventDefault(); if (!name.trim()) return; addTask({ name, dueDate: dueDate.toISOString(), approach }); setName(''); setApproach(''); };
+    const handleSubmit = (e) => { e.preventDefault(); if (!name.trim()) return; addTask({ name, dueDate: dueDate.toISOString(), description: approach, priority: 'medium', milestoneId: selectedMilestoneId || null }); setName(''); setApproach(''); setSelectedMilestoneId(''); };
     const handleTaskClick = (taskId) => { if(window.confirm("Start this task now? This will take you to the immersive zone.")) { navigate(`/immersive/${taskId}`); } };
     const handleRemoveTask = (e, taskId) => { e.stopPropagation(); if (window.confirm("Are you sure you want to delete this task?")) { removeTask(taskId); }};
     const handleOpenEditModal = (e, task) => { e.stopPropagation(); setEditingTask(task); setEditModalOpen(true); };
     const handleSaveTask = (updatedData) => { if (editingTask) { updateTask(editingTask.id, updatedData); } };
-    const handleToggleComplete = (e, taskId) => { e.stopPropagation(); toggleTaskCompletion(taskId); };
+    const handleToggleComplete = async (e, taskId) => { 
+        e.stopPropagation(); 
+        const task = tasks.find(t => t.id === taskId);
+        if (task && !task.completed) {
+            // Task is being completed, show follow-up modal
+            setCompletedTask(task);
+            setFollowUpModalOpen(true);
+        }
+        await toggleTaskCompletion(taskId); 
+    };
 
     // FIX: Restored auto-bullet functionality
     const handleApproachChange = (e) => { let value = e.target.value; if (value === '') { setApproach(''); return; } if (!value.startsWith('• ')) { value = '• ' + value.trimStart(); } setApproach(value); };
@@ -181,6 +227,14 @@ const ImminentTasks = () => {
                 <DatePickerWrapper>
                     <DatePicker selected={dueDate} onChange={date => setDueDate(date)} dateFormat="MMMM d, yyyy" />
                 </DatePickerWrapper>
+                <Select value={selectedMilestoneId} onChange={e => setSelectedMilestoneId(e.target.value)}>
+                    <option value="">No milestone (optional)</option>
+                    {milestones.map(milestone => (
+                        <option key={milestone.id} value={milestone.id}>
+                            {milestone.name}
+                        </option>
+                    ))}
+                </Select>
                 <TextArea ref={approachRef} value={approach} onChange={handleApproachChange} onKeyDown={handleApproachKeyDown} placeholder="Method of approach (bullet points)" />
                 <SubmitButton type="submit">Add Task</SubmitButton>
             </FormContainer>
@@ -190,6 +244,7 @@ const ImminentTasks = () => {
             <TasksList>
                 {incompleteTasks.map(task => {
                     const daysLeft = differenceInDays(new Date(task.dueDate), new Date());
+                    const milestone = task.milestoneId ? getMilestoneById(task.milestoneId) : null;
                     return (
                         <TaskCard key={task.id} onClick={() => handleTaskClick(task.id)} daysLeft={daysLeft}>
                             <CardActions>
@@ -199,6 +254,12 @@ const ImminentTasks = () => {
                             <TaskName>{task.name}</TaskName>
                             <TaskDue>{daysLeft < 0 ? `Overdue by ${Math.abs(daysLeft)} days` : `Due in: ${daysLeft} days`}</TaskDue>
                             <TimeSpentDisplay>Time Spent: {formatTimeSpent(task.timeSpent)}</TimeSpentDisplay>
+                            {milestone && (
+                                <TaskMilestone>
+                                    <MilestoneIndicator color={milestone.color} />
+                                    {milestone.name}
+                                </TaskMilestone>
+                            )}
                             <BottomRightButton onClick={(e) => handleToggleComplete(e, task.id)} hoverColor="#22c55e" hoverBg="#22c55e1a">
                                 <FaCheckCircle />
                             </BottomRightButton>
@@ -208,6 +269,11 @@ const ImminentTasks = () => {
             </TasksList>
             <EditModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} item={editingTask} onSave={handleSaveTask} />
             <CompletedTasksModal isOpen={isCompletedModalOpen} onClose={() => setCompletedModalOpen(false)} tasks={completedTasks} />
+            <FollowUpTaskModal 
+                isOpen={isFollowUpModalOpen} 
+                onClose={() => setFollowUpModalOpen(false)} 
+                completedTask={completedTask} 
+            />
         </TasksContainer>
     );
 };

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { useAppContext } from '../../context/AppContextFallback';
+import { useAppContext } from '../../context/AppContextCloud';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -63,9 +63,19 @@ const Button = styled.button`
     &:hover { opacity: 0.85; }
 `;
 
+const UserInfo = styled.div`
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid ${({ theme }) => theme.borderColor};
+    text-align: center;
+    color: ${({ theme }) => theme.text};
+    opacity: 0.7;
+    font-size: 0.9rem;
+`;
+
 const SettingsModal = ({ isOpen, onClose }) => {
     const context = useAppContext();
-    const { semesterStart, semesterEnd, setSemesterDates } = context || {};
+    const { semesterStart, semesterEnd, setSemesterDates, user } = context || {};
     const [startDate, setStartDate] = useState(semesterStart);
     const [endDate, setEndDate] = useState(semesterEnd);
 
@@ -81,7 +91,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
             <ModalContent onClick={e => e.stopPropagation()}>
                 <ModalTitle>Settings</ModalTitle>
                 <FormGroup>
-                    <label htmlFor="start-date">Semester Start Date</label>
+                    <label htmlFor="start-date">Timeline Start Date</label>
                     <DatePicker
                         id="start-date"
                         selected={startDate}
@@ -94,7 +104,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
                     />
                 </FormGroup>
                 <FormGroup>
-                    <label htmlFor="end-date">Semester End Date</label>
+                    <label htmlFor="end-date">Timeline End Date</label>
                     <DatePicker
                         id="end-date"
                         selected={endDate}
@@ -111,6 +121,10 @@ const SettingsModal = ({ isOpen, onClose }) => {
                     <Button onClick={onClose}>Cancel</Button>
                     <Button onClick={handleSave} primary>Save Changes</Button>
                 </ButtonGroup>
+                
+                <UserInfo>
+                    Logged in as: {user?.signInDetails?.loginId || user?.attributes?.email || user?.username || 'Unknown User'}
+                </UserInfo>
             </ModalContent>
         </ModalOverlay>
     );

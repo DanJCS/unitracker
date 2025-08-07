@@ -1,7 +1,7 @@
 // src/pages/Milestones.jsx
 
 import React, { useState } from 'react';
-import { useAppContext } from '../context/AppContextFallback';
+import { useAppContext } from '../context/AppContextCloud';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import styled from 'styled-components';
@@ -9,6 +9,7 @@ import { format, differenceInDays } from 'date-fns';
 import { FaTrash, FaPencilAlt, FaCheck, FaUndo } from 'react-icons/fa';
 import EditModal from '../components/common/EditModal';
 import DescriptionModal from '../components/common/DescriptionModal';
+import ColorPicker from '../components/common/ColorPicker';
 
 const MilestonesContainer = styled.div`
     width: 100%;
@@ -96,7 +97,7 @@ const getGlow = (daysLeft) => {
 const MilestoneCard = styled.div`
     position: relative; display: flex; justify-content: space-between; align-items: center;
     background: ${({ theme }) => theme.cardBg}; padding: 1.5rem; border-radius: 12px;
-    border-left: 5px solid ${({ completed }) => (completed ? '#22c55e' : '#EF4444')};
+    border-left: 5px solid ${({ completed, color }) => (completed ? '#22c55e' : color || '#6366f1')};
     transition: all 0.2s ease;
     box-shadow: ${({ daysLeft }) => getGlow(daysLeft)};
     min-height: 100px;
@@ -204,6 +205,7 @@ const Milestones = () => {
     const [name, setName] = useState('');
     const [date, setDate] = useState(new Date());
     const [description, setDescription] = useState('');
+    const [color, setColor] = useState('#6366f1');
     const [isEditModalOpen, setEditModalOpen] = useState(false);
     const [editingMilestone, setEditingMilestone] = useState(null);
     const [isDescriptionModalOpen, setDescriptionModalOpen] = useState(false);
@@ -212,9 +214,10 @@ const Milestones = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        addMilestone({ name, date: date.toISOString(), description });
+        addMilestone({ name, date: date.toISOString(), description, color });
         setName('');
         setDescription('');
+        setColor('#6366f1');
     };
     const handleRemoveMilestone = (e, milestoneId) => { e.stopPropagation(); if (window.confirm("Are you sure you want to delete this milestone?")) { removeMilestone(milestoneId); }};
     const handleOpenEditModal = (e, milestone) => { e.stopPropagation(); setEditingMilestone(milestone); setEditModalOpen(true); };
@@ -230,13 +233,14 @@ const Milestones = () => {
                 <Input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Milestone Name (e.g., Final Report Due)" required />
                 <DatePickerWrapper><DatePicker selected={date} onChange={d => setDate(d)} dateFormat="MMMM d, yyyy" /></DatePickerWrapper>
                 <TextArea value={description} onChange={e => setDescription(e.target.value)} placeholder="Add a description... (supports Markdown)" />
+                <ColorPicker selectedColor={color} onColorChange={setColor} label="Milestone Color" />
                 <SubmitButton type="submit">Add Milestone</SubmitButton>
             </FormContainer>
             <MilestonesList>
                 {milestones.sort((a, b) => new Date(a.date) - new Date(b.date)).map(m => {
                     const daysLeft = differenceInDays(new Date(m.date), new Date());
                     return (
-                        <MilestoneCard key={m.id} completed={m.completed} daysLeft={daysLeft} onClick={() => handleOpenDescriptionModal(m)}>
+                        <MilestoneCard key={m.id} completed={m.completed} daysLeft={daysLeft} color={m.color} onClick={() => handleOpenDescriptionModal(m)}>
                             <CardActions>
                                 <ActionButton onClick={(e) => handleOpenEditModal(e, m)} hoverColor="#6366f1" hoverBg="#6366f11a"><FaPencilAlt /></ActionButton>
                                 <ActionButton onClick={(e) => handleRemoveMilestone(e, m.id)}><FaTrash /></ActionButton>

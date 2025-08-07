@@ -3,8 +3,9 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
-import { useAppContext } from '../../context/AppContextFallback';
-import { FaHome, FaTasks, FaFlag, FaMoon, FaSun, FaChevronLeft, FaChevronRight, FaCog } from 'react-icons/fa';
+import { useAppContext } from '../../context/AppContextCloud';
+import { signOut } from 'aws-amplify/auth';
+import { FaHome, FaTasks, FaFlag, FaMoon, FaSun, FaChevronLeft, FaChevronRight, FaCog, FaSignOutAlt } from 'react-icons/fa';
 
 const SidebarContainer = styled.div`
     width: ${({ isCollapsed }) => (isCollapsed ? '80px' : '250px')};
@@ -132,6 +133,15 @@ const MobileOverlay = styled.div`
 const Sidebar = ({ isCollapsed, setCollapsed, onSettingsClick }) => {
     const { theme, toggleTheme } = useAppContext();
 
+    const handleSignOut = async () => {
+        try {
+            await signOut();
+            console.log('✅ User signed out successfully');
+        } catch (error) {
+            console.error('❌ Error signing out:', error);
+        }
+    };
+
     return (
         <>
             <MobileOverlay show={!isCollapsed} onClick={() => setCollapsed(true)} />
@@ -163,6 +173,10 @@ const Sidebar = ({ isCollapsed, setCollapsed, onSettingsClick }) => {
                     <ActionButton onClick={toggleTheme} isCollapsed={isCollapsed}>
                         <Icon>{theme === 'light' ? <FaMoon /> : <FaSun />}</Icon>
                         {!isCollapsed && <Label>Toggle Theme</Label>}
+                    </ActionButton>
+                    <ActionButton onClick={handleSignOut} isCollapsed={isCollapsed}>
+                        <Icon><FaSignOutAlt /></Icon>
+                        {!isCollapsed && <Label>Log Out</Label>}
                     </ActionButton>
                 </BottomActions>
             </SidebarContainer>
