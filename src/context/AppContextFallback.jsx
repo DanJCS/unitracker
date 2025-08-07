@@ -1,5 +1,3 @@
-// src/context/AppContextFallback.jsx
-
 import React, { createContext, useContext } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import usePersistentState from '../hooks/usePersistentState';
@@ -10,30 +8,40 @@ const AppContext = createContext();
 const defaultStartDate = subDays(new Date(), 30).toISOString();
 const defaultEndDate = addDays(new Date(), 60).toISOString();
 
-export const AppProvider = ({ children }) => {
+export const AppProvider = ({ children, user }) => {
     const [milestones, setMilestones] = usePersistentState('milestones', []);
     const [tasks, setTasks] = usePersistentState('tasks', []);
     const [theme, setTheme] = usePersistentState('theme', 'light');
     const [semesterStart, setSemesterStart] = usePersistentState('semesterStart', defaultStartDate);
     const [semesterEnd, setSemesterEnd] = usePersistentState('semesterEnd', defaultEndDate);
 
-    // --- Milestone Functions (unchanged) ---
+    console.log('✅ Using fallback localStorage-based context with user:', user?.username);
+
+    // --- Milestone Functions ---
     const addMilestone = (milestone) => {
-        // Be explicit about the milestone shape
         const newMilestone = {
             id: uuidv4(),
             name: milestone.name,
             date: milestone.date,
-            description: milestone.description || '', // Ensure description exists
+            description: milestone.description || '',
             completed: false,
         };
         setMilestones([...milestones, newMilestone]);
     };
-    const removeMilestone = (id) => { setMilestones(milestones.filter(m => m.id !== id)); };
-    const toggleMilestoneCompletion = (id) => { setMilestones(milestones.map(m => m.id === id ? { ...m, completed: !m.completed } : m)); };
-    const updateMilestone = (id, updatedData) => { setMilestones(milestones.map(m => m.id === id ? { ...m, ...updatedData } : m)); };
 
-    // --- Task Functions (UPDATED) ---
+    const removeMilestone = (id) => { 
+        setMilestones(milestones.filter(m => m.id !== id)); 
+    };
+
+    const toggleMilestoneCompletion = (id) => { 
+        setMilestones(milestones.map(m => m.id === id ? { ...m, completed: !m.completed } : m)); 
+    };
+
+    const updateMilestone = (id, updatedData) => { 
+        setMilestones(milestones.map(m => m.id === id ? { ...m, ...updatedData } : m)); 
+    };
+
+    // --- Task Functions ---
     const addTask = (task) => {
         const newTask = {
             ...task,
@@ -44,13 +52,18 @@ export const AppProvider = ({ children }) => {
         setTasks([...tasks, newTask]);
     };
 
-    const removeTask = (id) => { setTasks(tasks.filter(t => t.id !== id)); };
+    const removeTask = (id) => { 
+        setTasks(tasks.filter(t => t.id !== id)); 
+    };
 
-    const updateTask = (id, updatedData) => { setTasks(tasks.map(t => t.id === id ? { ...t, ...updatedData } : t)); };
+    const updateTask = (id, updatedData) => { 
+        setTasks(tasks.map(t => t.id === id ? { ...t, ...updatedData } : t)); 
+    };
 
-    const getTaskById = (id) => { return tasks.find(t => t.id === id); };
+    const getTaskById = (id) => { 
+        return tasks.find(t => t.id === id); 
+    };
 
-    // --- NEW Task Functions ---
     const logTimeForTask = (id, seconds) => {
         setTasks(tasks.map(t =>
             t.id === id ? { ...t, timeSpent: (t.timeSpent || 0) + seconds } : t
@@ -63,17 +76,24 @@ export const AppProvider = ({ children }) => {
         ));
     };
 
-    // --- Other Functions (unchanged) ---
-    const toggleTheme = () => { setTheme(theme === 'light' ? 'dark' : 'light'); };
-    const setSemesterDates = (start, end) => { setSemesterStart(start.toISOString()); setSemesterEnd(end.toISOString()); };
+    // --- Other Functions ---
+    const toggleTheme = () => { 
+        setTheme(theme === 'light' ? 'dark' : 'light'); 
+    };
+
+    const setSemesterDates = (start, end) => { 
+        setSemesterStart(start.toISOString()); 
+        setSemesterEnd(end.toISOString()); 
+    };
 
     const value = {
-        milestones, tasks, theme,
+        milestones, tasks, theme, user,
+        isLoading: false, // No loading for localStorage
         semesterStart: new Date(semesterStart),
         semesterEnd: new Date(semesterEnd),
         addMilestone, removeMilestone, toggleMilestoneCompletion, updateMilestone,
         addTask, removeTask, updateTask, getTaskById,
-        logTimeForTask, toggleTaskCompletion, // EXPORT NEW FUNCTIONS
+        logTimeForTask, toggleTaskCompletion,
         toggleTheme, setSemesterDates,
     };
 

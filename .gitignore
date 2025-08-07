@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Amplify generated files
+.amplify/
+amplify_outputs.json

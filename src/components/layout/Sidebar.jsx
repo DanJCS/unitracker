@@ -3,7 +3,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../context/AppContextFallback';
 import { FaHome, FaTasks, FaFlag, FaMoon, FaSun, FaChevronLeft, FaChevronRight, FaCog } from 'react-icons/fa';
 
 const SidebarContainer = styled.div`

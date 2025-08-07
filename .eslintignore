@@ -1,0 +1,3 @@
+# Ignore Amplify generated files
+.amplify/
+amplify_outputs.json

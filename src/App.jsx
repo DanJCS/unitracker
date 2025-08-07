@@ -3,7 +3,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
-import { AppProvider, useAppContext } from './context/AppContext';
+import { Authenticator } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+import { AppProvider, useAppContext } from './context/AppContextFallback';
 import { lightTheme, darkTheme } from './styles/theme';
 import { GlobalStyle } from './styles/GlobalStyle';
 import Layout from './components/layout/Layout';
@@ -11,10 +13,20 @@ import Overview from './pages/Overview';
 import ImminentTasks from './pages/ImminentTasks';
 import Milestones from './pages/Milestones';
 import ImmersiveZone from './pages/ImmersiveZone';
+import LoadingSpinner from './components/common/LoadingSpinner';
 
 function AppContent() {
-    const { theme } = useAppContext();
+    const { theme, isLoading } = useAppContext();
     const currentTheme = theme === 'light' ? lightTheme : darkTheme;
+
+    if (isLoading) {
+        return (
+            <ThemeProvider theme={currentTheme}>
+                <GlobalStyle />
+                <LoadingSpinner text="Loading your data..." />
+            </ThemeProvider>
+        );
+    }
 
     return (
         <ThemeProvider theme={currentTheme}>
@@ -33,11 +45,15 @@ function AppContent() {
 
 function App() {
     return (
-        <AppProvider>
-            <Router>
-                <AppContent />
-            </Router>
-        </AppProvider>
+        <Authenticator>
+            {({ user }) => (
+                <AppProvider user={user}>
+                    <Router>
+                        <AppContent />
+                    </Router>
+                </AppProvider>
+            )}
+        </Authenticator>
     );
 }
 

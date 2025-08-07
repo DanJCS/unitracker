@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../context/AppContextFallback';
 import OverviewProgressBar from '../components/OverviewProgressBar';
 import { differenceInDays } from 'date-fns';
 

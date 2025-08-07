@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../context/AppContextFallback';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -64,7 +64,8 @@ const Button = styled.button`
 `;
 
 const SettingsModal = ({ isOpen, onClose }) => {
-    const { semesterStart, semesterEnd, setSemesterDates } = useAppContext();
+    const context = useAppContext();
+    const { semesterStart, semesterEnd, setSemesterDates } = context || {};
     const [startDate, setStartDate] = useState(semesterStart);
     const [endDate, setEndDate] = useState(semesterEnd);
 
