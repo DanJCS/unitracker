@@ -24,4 +24,6 @@ dist-ssr
 *.sw?
 # Amplify generated files
 .amplify/
-amplify_outputs.json
+/amplify_outputs.json
+# But allow it in public/ for deployment
+!public/amplify_outputs.json

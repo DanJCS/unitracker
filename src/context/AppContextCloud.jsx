@@ -175,13 +175,26 @@ export const AppProvider = ({ children, user }) => {
 
     const updateMilestone = async (id, updatedData) => {
         try {
-            if (!client) return;
-            const updated = await client.models.Milestone.update({
-                id,
-                ...updatedData,
-            });
-            setMilestones(prev => prev.map(m => m.id === id ? updated.data : m));
-            console.log('📝 Milestone updated');
+            const milestone = milestones.find(m => m.id === id);
+            const updatedMilestone = { ...milestone, ...updatedData };
+            
+            // Update local state immediately
+            const updatedMilestones = milestones.map(m => m.id === id ? updatedMilestone : m);
+            await updateMilestonesData(updatedMilestones);
+
+            // Sync to cloud if available
+            if (client) {
+                try {
+                    await client.models.Milestone.update({
+                        id,
+                        ...updatedData,
+                    });
+                    console.log('📝 Milestone updated in cloud');
+                } catch (cloudError) {
+                    console.warn('❌ Cloud sync failed for milestone update:', cloudError);
+                    // Local data is still updated
+                }
+            }
         } catch (error) {
             console.error('❌ Error updating milestone:', error);
         }
