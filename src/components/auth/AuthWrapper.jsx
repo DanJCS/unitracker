@@ -2,7 +2,7 @@ import React from 'react';
 import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { ThemeProvider } from 'styled-components';
-import { useAppContext } from '../../context/AppContextCloud';
+import { useAppContext } from '../../context/AppContextAmplify';
 import { lightTheme, darkTheme } from '../../styles/theme';
 
 const AuthWrapper = ({ children }) => {
@@ -30,7 +30,7 @@ const AuthWrapper = ({ children }) => {
   return (
     <ThemeProvider theme={theme === 'dark' ? darkTheme : lightTheme}>
       <Authenticator theme={amplifyTheme} variation="modal">
-        {({ signOut, user }) => (
+        {() => (
           <div>
             {children}
           </div>
